@@ -8,7 +8,7 @@ docker has the docker container and conda yml for running both notebooks in an n
 
 build the docker container , and modify the following command to run the container on your system:
 
-docker run --gpus all-i -t -d --shm-size=256m -v/home/ludauter/Documents:/home/files  -p 8855:8855/tcp  project:latest /bin/bash
+docker run --gpus all -i -t -d --shm-size=256m -v/home/ludauter/Documents:/home/files  -p 8855:8855/tcp  project:latest /bin/bash
 
 I use visual studio code for interfacing with the container.
 

@@ -21,3 +21,5 @@ COPY env.yml /env.yml
 RUN conda env create -f /env.yml
 
 RUN mkdir /home/files
+
+SHELL ['conda',"init","bash"]
