@@ -12,4 +12,4 @@ class JacardLoss(nn.Module):
 
     def forward(self,prediction,target):
         dice = self.loss(prediction,target)
-        return (2/dice-1).mean()
+        return (dice/(2-dice)).mean()
