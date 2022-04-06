@@ -4,10 +4,9 @@ import torch
 
 class FocalLoss(nn.Module):
 
-    def __init__(self,n_classes, gamma=2):
+    def __init__(self, gamma=2):
         super().__init__()
         self.loss = nn.CrossEntropyLoss(reduce= False)
-        self.n_classes = n_classes
         self.gamma = gamma
     def forward(self,prediction,target):
         log_pred = self.loss(prediction,target.squeeze())
