@@ -5,5 +5,5 @@ class CrossEntropy(nn.Module):
         super().__init__()
         self.cross_entropy = nn.CrossEntropyLoss()
 
-    def forward(self,X,Y):
-        return self.cross_entropy(X,Y.squeeze())
+    def forward(self,prediction,target):
+        return self.cross_entropy(prediction,target.squeeze())

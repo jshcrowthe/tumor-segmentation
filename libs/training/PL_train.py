@@ -5,7 +5,7 @@ import torch.nn.functional as F
 
 class Main_Loop(pl.LightningModule):
 
-    def __init__(self, model,loss,metric,learning_rate=0.01,num_classes = 2,batch_size = 16):
+    def __init__(self, model,loss,metric,learning_rate=0.01,num_classes = 2,batch_size = 8):
         super().__init__()
         self.model = model
         self.learning_rate = learning_rate
@@ -23,7 +23,7 @@ class Main_Loop(pl.LightningModule):
 
     def training_step(self, batch, batch_idx):
 
-        inputs = batch["t1"]["data"]
+        inputs = batch["data"]["data"]
         targets = batch["label"]["data"].long()
 
         logits = self.model(inputs)
@@ -39,7 +39,7 @@ class Main_Loop(pl.LightningModule):
 
     def validation_step(self, batch, batch_idx):
 
-        inputs = batch["t1"]["data"]
+        inputs = batch["data"]["data"]
         targets = batch["label"]["data"].long()
 
         logits = self.model(inputs)
