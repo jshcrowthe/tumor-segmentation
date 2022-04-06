@@ -31,6 +31,8 @@ class MyDataModule(pl.LightningDataModule):
 
     def prepare_data(self):
         if self.prepaire:
+            if not os.path.exists(self.out_dir):
+                os.mkdir(self.out_dir)
             nni_utils.downsample_preprocess(self.data_dir,self.out_dir,self.data_type,n_jobs = 10)
         subjects = nni_utils.load_downsampled_subjects(self.out_dir)
         train_subjects, val_subjects = train_test_split(subjects,test_size = .2,random_state = 42 )
