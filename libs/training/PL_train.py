@@ -5,7 +5,7 @@ import torch.nn.functional as F
 
 class Main_Loop(pl.LightningModule):
 
-    def __init__(self, model,loss,metric,learning_rate=0.01,num_classes = 2,batch_size = 8,scheduler = None,scheduler_args = None):
+    def __init__(self, model,loss,metric,type_list,learning_rate=0.01,num_classes = 2,batch_size = 8,scheduler = None,scheduler_args = None):
         super().__init__()
         self.model = model
         self.learning_rate = learning_rate
@@ -15,6 +15,7 @@ class Main_Loop(pl.LightningModule):
         self.metric = metric
         self.scheduler = scheduler
         self.scheduler_args = scheduler_args
+        self.type_list = type_list
     def forward(self, x):
         return self.model(x)
 
@@ -31,10 +32,23 @@ class Main_Loop(pl.LightningModule):
         else:
             return optimizer
 
+    def prepare_batch(self,batch):
+        if len(self.type_list) == 1:
+            inputs = batch[self.type_list[0]]["data"]
+            targets = batch["seg"]["data"].long()
+            return inputs,targets
+        else:
+            targets = batch["seg"]["data"].long()
+            n = len(self.type_list)
+            inputs = 0
+            for type in self.type_list:
+                inputs = inputs + batch[self.type_list[type]]["data"]
+            inputs = inputs/n
+            return inputs
+            
     def training_step(self, batch, batch_idx):
 
-        inputs = batch["t1"]["data"]
-        targets = batch["seg"]["data"].long()
+        inputs,targets = self.prepare_batch(batch)
 
         logits = self.model(inputs)
         batch_loss = self.loss(logits, targets)
@@ -48,8 +62,7 @@ class Main_Loop(pl.LightningModule):
 
     def validation_step(self, batch, batch_idx):
 
-        inputs = batch["t1"]["data"]
-        targets = batch["seg"]["data"].long()
+        inputs,targets = self.prepare_batch(batch)
 
         logits = self.model(inputs)
 
