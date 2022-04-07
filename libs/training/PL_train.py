@@ -42,9 +42,9 @@ class Main_Loop(pl.LightningModule):
             n = len(self.type_list)
             inputs = 0
             for type in self.type_list:
-                inputs = inputs + batch[self.type_list[type]]["data"]
+                inputs = inputs + batch[type]["data"]
             inputs = inputs/n
-            return inputs
+            return inputs,targets
             
     def training_step(self, batch, batch_idx):
 
