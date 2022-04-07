@@ -11,9 +11,10 @@ class MyDataModule(pl.LightningDataModule):
         self,
         data_dir = "/home/ludauter/Documents/brats_example/data/train",
         out_dir = "/home/ludauter/tumor-segmentation/libs/data/examples",
-        data_type = "t1",
+        type_list = ["t1"],
+        sample_list = ["t1"],
         batch_size = 8,
-        num_workers =10,
+        num_workers =16,
         prepaire = False,
         n_jobs = 10
     ):
@@ -26,17 +27,18 @@ class MyDataModule(pl.LightningDataModule):
         self.num_workers = num_workers
         self.train_loader = None
         self.validation_loader = None
-        self.data_type = data_type
+        self.type_list = type_list
         self.size = (48, 60, 48)
-
+        self.sample_list = sample_list
     def prepare_data(self):
         if self.prepaire:
             if not os.path.exists(self.out_dir):
                 os.mkdir(self.out_dir)
-            nni_utils.downsample_preprocess(self.data_dir,self.out_dir,self.data_type,n_jobs = 10)
-        subjects = nni_utils.load_downsampled_subjects(self.out_dir)
+            nni_utils.downsample_preprocess(self.data_dir,self.out_dir,self.sample_list,n_jobs = 10)
+        subjects = nni_utils.load_subjects(self.out_dir,self.type_list)
+
         train_subjects, val_subjects = train_test_split(subjects,test_size = .2,random_state = 42 )
-        size = (48, 60, 48)
+
         training_transform = tio.Compose([
             tio.RandomMotion(p=0.2),
             tio.RandomBiasField(p=0.3),

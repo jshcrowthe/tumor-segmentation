@@ -1,9 +1,6 @@
 from .Dice import DiceLoss
 import torch.nn as nn
 
-
-
-
 class JacardLoss(nn.Module):
 
     def __init__(self):

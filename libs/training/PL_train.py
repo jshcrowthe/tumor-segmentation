@@ -23,8 +23,8 @@ class Main_Loop(pl.LightningModule):
 
     def training_step(self, batch, batch_idx):
 
-        inputs = batch["data"]["data"]
-        targets = batch["label"]["data"].long()
+        inputs = batch["t1"]["data"]
+        targets = batch["seg"]["data"].long()
 
         logits = self.model(inputs)
         batch_loss = self.loss(logits, targets)
@@ -39,15 +39,19 @@ class Main_Loop(pl.LightningModule):
 
     def validation_step(self, batch, batch_idx):
 
-        inputs = batch["data"]["data"]
-        targets = batch["label"]["data"].long()
+        inputs = batch["t1"]["data"]
+        targets = batch["seg"]["data"].long()
 
         logits = self.model(inputs)
+
         batch_loss = self.loss(logits, targets)
 
         pred = logits.argmax(dim = 1)
+
         with torch.no_grad():
+ 
             self.log("Validation Loss",float(batch_loss.cpu().numpy()) , on_epoch=True,on_step = True,batch_size=self.batch_size)
+
             self.log("Validation Acc",float(self.metric(pred,targets).cpu().numpy()) , on_epoch=True,on_step = True,batch_size=self.batch_size)
 
         return batch_loss

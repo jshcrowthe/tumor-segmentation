@@ -1,7 +1,6 @@
 import torch.nn as nn
 import torch
 
-
 class FocalTverskyLoss(nn.Module):
 
     def __init__(self,reduce=True, alpha = 1 , gamma = 2,smooth = 1):
@@ -14,8 +13,10 @@ class FocalTverskyLoss(nn.Module):
     def forward(self,prediction,target):
 
         prediction = prediction.softmax(dim=1)
-        target = nn.functional.one_hot(target.squeeze(),num_classes = prediction.shape[1]).float().permute(0,4,1,2,3)
-
+        if len(prediction.shape) == 5:
+            target = nn.functional.one_hot(target.squeeze(),num_classes = prediction.shape[1]).float().permute(0,4,1,2,3)
+        else:
+            target = nn.functional.one_hot(target.squeeze(),num_classes = prediction.shape[1]).float().permute(0,3,1,2)
         preds =prediction.flatten(start_dim = 1)
         y = target.flatten(start_dim = 1)
 

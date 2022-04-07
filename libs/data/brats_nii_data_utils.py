@@ -18,56 +18,37 @@ class nni_utils:
         files = sorted(os.listdir(os.path.join(path,folder)))
         files = [os.path.join(path,folder,file) for file in files]
         return files
+
     @staticmethod
-    def create_downsample_record(dir,list,id):
-        list = sorted(list)
-        
-        return tio.Subject(
-                    label=tio.LabelMap(os.path.join(dir,list[1])),
-                    data=tio.ScalarImage(os.path.join(dir,list[0])),
-                    id = id
-                )
-        label=tio.LabelMap(os.path.join(dir,list[1]))
-        data=tio.ScalarImage(os.path.join(dir,list[0]))
+    def create_record(files,id, type_list):
+
+        type_list = type_list.copy()
+        type_list.append("seg")
+        records = {}
+
+        for type in type_list:
+
+            for file in files:
+
+                if type + ".nii.gz"  in file:
+
+                    if type == "seg":
+
+                        records[type] = tio.LabelMap(file)
+
+                    else:
+
+                        records[type] = tio.ScalarImage(file)
+
+        records["id"] = id
+
+        return tio.Subject(records)
+
     @staticmethod
-    def create_record(files,id, type):
-
-        if type == "t1":
-
-            return tio.Subject(
-                    # flair=tio.ScalarImage(files[0],),
-                    label=tio.LabelMap(files[1]),
-                    t1=tio.ScalarImage(files[2],),
-                    # t2=tio.ScalarImage(files[-1],)
-                    id = id
-                )
-        if type == "t2":
-
-            return tio.Subject(
-                    # flair=tio.ScalarImage(files[0],),
-                    label=tio.LabelMap(files[1]),
-                    # t1=tio.ScalarImage(files[2],),
-                    t2=tio.ScalarImage(files[-1],),
-                    id = id
-                )
-        if type == "flair":
-
-            return tio.Subject(
-                    flair=tio.ScalarImage(files[0],),
-                    label=tio.LabelMap(files[1]),
-                    # t1=tio.ScalarImage(files[2],),
-                    # t2=tio.ScalarImage(files[-1],)
-                    id = id
-                )
-    @staticmethod
-    def load_subjects(path,type):
+    def load_subjects(path,type_list):
         folders = nni_utils.get_folders(path)
-        return [nni_utils.create_record(nni_utils.get_files(path,folder),id,type) for id,folder in enumerate(folders)]
+        return [nni_utils.create_record(nni_utils.get_files(path,folder),id,type_list) for id,folder in enumerate(folders)]
     
-    @staticmethod
-    def load_downsampled_subjects(path):
-        folders = nni_utils.get_folders(path)
-        return [nni_utils.create_downsample_record(os.path.join(path,str(id)), nni_utils.get_files(path,folder),id) for id,folder in enumerate(folders)]
 
     @staticmethod
     def save_preprocessing(dir,seg,data,id):
@@ -78,11 +59,13 @@ class nni_utils:
             os.mkdir(path)
 
         seg.save(os.path.join(dir,str(id),"seg"+ending))
-        data.save(os.path.join(dir,str(id),"data"+ending))
+        for type,value in data.items():
+            value.save(os.path.join(dir,str(id),type+ending))
 
     @staticmethod
-    def downsample_preprocess(data_dir,out_dir,type,n_jobs =1):
-        subjects = nni_utils.load_subjects(data_dir,type)
+    def downsample_preprocess(data_dir,out_dir,type_list,n_jobs =1):
+
+        subjects = nni_utils.load_subjects(data_dir,type_list)
 
         size = (48, 60, 48)
         preprocessing_transform = tio.Compose([
@@ -92,7 +75,12 @@ class nni_utils:
         ])
 
         dataset = tio.SubjectsDataset(subjects, transform=preprocessing_transform)
+
         def func(i):
-            seg,data,id = dataset[i]["label"],dataset[i][type],dataset[i]["id"]
+            
+            seg = dataset[i]["seg"]
+            id = dataset[i]["id"]
+            data =  {type:dataset[i][type] for type in type_list}
             nni_utils.save_preprocessing(out_dir,seg,data,id)
+
         Parallel(n_jobs=n_jobs)(delayed(func)(i ) for i in tqdm(range(len(dataset))))
