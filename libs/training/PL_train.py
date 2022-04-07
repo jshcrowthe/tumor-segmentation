@@ -24,8 +24,7 @@ class Main_Loop(pl.LightningModule):
             lr_scheduler = {
             'scheduler': self.scheduler(optimizer = optimizer,**self.scheduler_args),
             'interval': 'epoch',
-            'strict': True,
-            'monitor': 'val_acc_epoch',
+            'strict': True
             }
 
             return [optimizer],[lr_scheduler]
