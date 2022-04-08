@@ -9,6 +9,8 @@ from sklearn.model_selection import train_test_split
 class MyDataModule(pl.LightningDataModule):
     def __init__(
         self,
+        train_transformer,
+        val_transformer,
         data_dir = "/home/ludauter/Documents/brats_example/data/train",
         out_dir = "/home/ludauter/tumor-segmentation/libs/data/examples",
         type_list = ["t1"],
@@ -16,7 +18,8 @@ class MyDataModule(pl.LightningDataModule):
         batch_size = 8,
         num_workers =16,
         prepaire = False,
-        n_jobs = 10
+        n_jobs = 10,
+        size = (48, 60, 48)
     ):
         super().__init__()
         self.data_dir = data_dir
@@ -30,54 +33,41 @@ class MyDataModule(pl.LightningDataModule):
         self.type_list = type_list
         self.size = (48, 60, 48)
         self.sample_list = sample_list
+        self.train_transformer = train_transformer
+        self.val_transformer = val_transformer
+        self.size = size
+
     def prepare_data(self):
         if self.prepaire:
             if not os.path.exists(self.out_dir):
                 os.mkdir(self.out_dir)
-            nni_utils.downsample_preprocess(self.data_dir,self.out_dir,self.sample_list,n_jobs = 10)
-        subjects = nni_utils.load_subjects(self.out_dir,self.type_list)
+            nni_utils.downsample_preprocess(self.data_dir,self.out_dir,self.sample_list,size = self.size,n_jobs = self.n_jobs)
 
-        train_subjects, val_subjects = train_test_split(subjects,test_size = .2,random_state = 42 )
-
-        training_transform = tio.Compose([
-            tio.RandomMotion(p=0.2),
-            tio.RandomBiasField(p=0.3),
-            tio.ZNormalization(masking_method=tio.ZNormalization.mean),
-            tio.RandomNoise(p=0.5),
-            tio.RandomFlip(),
-            tio.OneOf({
-                tio.RandomAffine(): 0.8,
-                tio.RandomElasticDeformation(): 0.2,
-            }),
-        ])
-
-        validation_transform = tio.Compose([
-            tio.ZNormalization(masking_method=tio.ZNormalization.mean),
-        ])
-
-        training_set = tio.SubjectsDataset(train_subjects, transform=training_transform)
-        validation_set = tio.SubjectsDataset(val_subjects, transform=validation_transform)
- 
-        self.train_loader = torch.utils.data.DataLoader(
-            training_set,
-            batch_size=self.batch_size,
-            shuffle=True,
-            num_workers=self.num_workers,
-        )
-
-        self.validation_loader = torch.utils.data.DataLoader(
-            validation_set,
-            batch_size=self.batch_size,
-            shuffle=False,
-            num_workers=self.num_workers,
-        )
 
     def setup(self, stage=None):
         # Assign train/val datasets for use in dataloaders
         if stage == "fit" or stage is None:
-            pass
+            subjects = nni_utils.load_subjects(self.out_dir,self.type_list)
 
-        # Assign test dataset for use in dataloader(s)
+            train_subjects, val_subjects = train_test_split(subjects,test_size = .2,random_state = 42 )
+
+            training_set = tio.SubjectsDataset(train_subjects, transform=self.train_transformer)
+            validation_set = tio.SubjectsDataset(val_subjects, transform=self.val_transformer)
+    
+            self.train_loader = torch.utils.data.DataLoader(
+                training_set,
+                batch_size=self.batch_size,
+                shuffle=True,
+                num_workers=self.num_workers,
+            )
+
+            self.validation_loader = torch.utils.data.DataLoader(
+                validation_set,
+                batch_size=self.batch_size,
+                shuffle=False,
+                num_workers=self.num_workers,
+            )
+
         if stage == "test" or stage is None:
             pass
 
@@ -86,6 +76,3 @@ class MyDataModule(pl.LightningDataModule):
 
     def val_dataloader(self):
         return self.validation_loader
-
-
-    
