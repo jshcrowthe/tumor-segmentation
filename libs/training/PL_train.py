@@ -2,17 +2,19 @@ import pytorch_lightning as pl
 # import numpy as np
 import torch
 import torch.nn.functional as F
+from metrics.accuracy  import accuracy
+from metrics.dice_coef import dice_coef
+from metrics.iou import iou
 
 class Main_Loop(pl.LightningModule):
 
-    def __init__(self, model,loss,metric,type_list,learning_rate=0.01,num_classes = 2,batch_size = 8,scheduler = None,scheduler_args = None):
+    def __init__(self, model,loss,type_list,learning_rate=0.01,num_classes = 2,batch_size = 8,scheduler = None,scheduler_args = None):
         super().__init__()
         self.model = model
         self.learning_rate = learning_rate
         self.loss = loss
         self.num_classes = num_classes
         self.batch_size = batch_size
-        self.metric = metric
         self.scheduler = scheduler
         self.scheduler_args = scheduler_args
         self.type_list = type_list
@@ -56,7 +58,9 @@ class Main_Loop(pl.LightningModule):
         pred = logits.argmax(dim = 1)
         with torch.no_grad():
             self.log("Train Loss",float(batch_loss.cpu().numpy()) , on_epoch=True,on_step = True,batch_size=self.batch_size)
-            self.log("Train Acc",float(self.metric(pred,targets).cpu().numpy()) , on_epoch=True,on_step = True,batch_size=self.batch_size)
+            self.log("Train Acc",float(accuracy(pred,targets).cpu().numpy()) , on_epoch=True,on_step = True,batch_size=self.batch_size)
+            self.log("Train mIoU",float(iou(logits,targets).cpu().numpy()) , on_epoch=True,on_step = True,batch_size=self.batch_size)
+            self.log("Train dice_coef",float(dice_coef(logits,targets).cpu().numpy()) , on_epoch=True,on_step = True,batch_size=self.batch_size)
         
         return batch_loss
 
@@ -74,6 +78,8 @@ class Main_Loop(pl.LightningModule):
  
             self.log("Validation Loss",float(batch_loss.cpu().numpy()) , on_epoch=True,on_step = True,batch_size=self.batch_size)
 
-            self.log("Validation Acc",float(self.metric(pred,targets).cpu().numpy()) , on_epoch=True,on_step = True,batch_size=self.batch_size)
-
+            self.log("Validation Acc",float(accuracy(pred,targets).cpu().numpy()) , on_epoch=True,on_step = True,batch_size=self.batch_size)
+            self.log("Validation mIoU",float(iou(logits,targets).cpu().numpy()) , on_epoch=True,on_step = True,batch_size=self.batch_size)
+            self.log("Validation dice_coef",float(dice_coef(logits,targets).cpu().numpy()) , on_epoch=True,on_step = True,batch_size=self.batch_size)
+        
         return batch_loss
