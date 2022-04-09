@@ -5,19 +5,53 @@ import torch.nn.functional as F
 from metrics.accuracy  import accuracy
 from metrics.dice_coef import dice_coef
 from metrics.iou import iou
+from models.stupid_model import OneLayer
+from losses.CrossEntropy import CrossEntropy
+from losses.Tversky import FocalTverskyLoss
+from losses.Dice import DiceLoss
+from losses.Focal import FocalLoss
+from losses.LogCosh import LogCoshLoss
+from losses.Jacard import JacardLoss
 
 class Main_Loop(pl.LightningModule):
 
-    def __init__(self, model,loss,type_list,learning_rate=0.01,num_classes = 2,batch_size = 8,scheduler = None,scheduler_args = None):
+    def __init__(self, model = "OneLayer",loss = "CrossEntropy",type_list = ["t1"],learning_rate=0.01,num_classes = 2,batch_size = 8,scheduler = None,scheduler_args = {},loss_args = {},model_args = {}):
         super().__init__()
-        self.model = model
+        self.model = self.get_model(model)(**model_args)
         self.learning_rate = learning_rate
-        self.loss = loss
+        self.loss = self.get_loss(loss)(**loss_args)
         self.num_classes = num_classes
         self.batch_size = batch_size
         self.scheduler = scheduler
         self.scheduler_args = scheduler_args
         self.type_list = type_list
+
+        self.save_hyperparameters()
+        self.model
+
+    def get_model(self,model):
+
+        if model =="OneLayer":
+            return OneLayer
+
+
+    def get_loss(self,loss):
+
+        if loss == "CrossEntropy":
+            return CrossEntropy
+        elif loss == "Dice":
+            return DiceLoss
+        elif loss == "Jacard":
+            return JacardLoss
+        elif loss == "Tverksy":
+            return JacardLoss
+        elif loss == "LogCosh":
+            return LogCoshLoss
+        elif loss == "Focal":
+            return FocalLoss
+        elif loss == "Tversky":
+            return FocalTverskyLoss
+
     def forward(self, x):
         return self.model(x)
 
