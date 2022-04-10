@@ -43,8 +43,6 @@ class Main_Loop(pl.LightningModule):
             return DiceLoss
         elif loss == "Jacard":
             return JacardLoss
-        elif loss == "Tverksy":
-            return JacardLoss
         elif loss == "LogCosh":
             return LogCoshLoss
         elif loss == "Focal":
