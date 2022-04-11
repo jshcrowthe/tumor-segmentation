@@ -17,7 +17,7 @@ class MyDataModule(pl.LightningDataModule):
         sample_list = ["t1"],
         batch_size = 8,
         num_workers =16,
-        prepaire = False,
+        prepare = False,
         n_jobs = 10,
         size = (48, 60, 48)
     ):
@@ -25,7 +25,7 @@ class MyDataModule(pl.LightningDataModule):
         self.data_dir = data_dir
         self.out_dir = out_dir
         self.n_jobs = n_jobs
-        self.prepaire = prepaire
+        self.prepare = prepare
         self.batch_size = batch_size
         self.num_workers = num_workers
         self.train_loader = None
@@ -38,7 +38,7 @@ class MyDataModule(pl.LightningDataModule):
         self.size = size
 
     def prepare_data(self):
-        if self.prepaire:
+        if self.prepare:
             if not os.path.exists(self.out_dir):
                 os.mkdir(self.out_dir)
             nni_utils.downsample_preprocess(self.data_dir,self.out_dir,self.sample_list,size = self.size,n_jobs = self.n_jobs)

@@ -1,2 +1,1 @@
-from .accuracy import accuracy
-from .iou import iou
+from .metrics import Metrics
