@@ -1,5 +1,4 @@
 import pytorch_lightning as pl
-# import numpy as np
 import torch
 import torch.nn.functional as F
 from metrics.metrics  import accuracy, dice_coef,iou
@@ -8,7 +7,7 @@ from losses.losses import CrossEntropy, FocalTverskyLoss, DiceLoss, FocalLoss, L
 
 class Main_Loop(pl.LightningModule):
 
-    def __init__(self, model = "OneLayer",loss = "CrossEntropy",type_list = ["t1"],learning_rate=0.01,num_classes = 2,batch_size = 8,scheduler = None,scheduler_args = {},loss_args = {},model_args = {}):
+    def __init__(self, model = "OneLayer",loss = "CrossEntropy",optimizer = torch.optim.AdamW,type_list = ["t1"],learning_rate=0.01,num_classes = 2,batch_size = 8,scheduler = None,scheduler_args = {},loss_args = {},model_args = {},optimizer_args = {}):
         super().__init__()
         self.model = self.get_model(model)(**model_args)
         self.learning_rate = learning_rate
@@ -18,7 +17,8 @@ class Main_Loop(pl.LightningModule):
         self.scheduler = scheduler
         self.scheduler_args = scheduler_args
         self.type_list = type_list
-
+        self.optimizer = optimizer
+        self.optimizer_args= optimizer_args
         self.save_hyperparameters()
         self.model
 
@@ -26,6 +26,9 @@ class Main_Loop(pl.LightningModule):
 
         if model =="OneLayer":
             return OneLayer
+
+        else:
+            return "Spelling Mistake"
 
 
     def get_loss(self,loss):
@@ -42,12 +45,14 @@ class Main_Loop(pl.LightningModule):
             return FocalLoss
         elif loss == "Tversky":
             return FocalTverskyLoss
+        else:
+            return "Spelling Mistake"
 
     def forward(self, x):
         return self.model(x)
 
     def configure_optimizers(self):
-        optimizer = torch.optim.AdamW(self.model.parameters())
+        optimizer = self.optimizer(self.model.parameters(),**self.optimizer_args)
         if self.scheduler:
             lr_scheduler = {
             'scheduler': self.scheduler(optimizer = optimizer,**self.scheduler_args),
