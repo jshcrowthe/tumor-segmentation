@@ -1,8 +1,6 @@
 import torch
 import torch.nn as nn
 
-
-
 class OneLayer(nn.Module):
 
     def __init__(self,n_classes = 5):

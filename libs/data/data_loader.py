@@ -11,8 +11,8 @@ class MyDataModule(pl.LightningDataModule):
         self,
         train_transformer,
         val_transformer,
-        data_dir = "/home/ludauter/Documents/brats_example/data/train",
-        out_dir = "/home/ludauter/tumor-segmentation/libs/data/examples",
+        data_dir,
+        out_dir,
         type_list = ["t1"],
         sample_list = ["t1"],
         batch_size = 8,
@@ -36,12 +36,16 @@ class MyDataModule(pl.LightningDataModule):
         self.train_transformer = train_transformer
         self.val_transformer = val_transformer
         self.size = size
+        self.valid_dataset = None
+        self.train_dataset = None
+
 
     def prepare_data(self):
         if self.prepare:
+            subjects = nni_utils.load_subjects(self.data_dir,self.type_list)
             if not os.path.exists(self.out_dir):
                 os.mkdir(self.out_dir)
-            nni_utils.downsample_preprocess(self.data_dir,self.out_dir,self.sample_list,size = self.size,n_jobs = self.n_jobs)
+            nni_utils.downsample_preprocess(subjects,self.out_dir,self.sample_list,size = self.size,n_jobs = self.n_jobs)
 
 
     def setup(self, stage=None):
@@ -51,18 +55,18 @@ class MyDataModule(pl.LightningDataModule):
 
             train_subjects, val_subjects = train_test_split(subjects,test_size = .2,random_state = 42 )
 
-            training_set = tio.SubjectsDataset(train_subjects, transform=self.train_transformer)
-            validation_set = tio.SubjectsDataset(val_subjects, transform=self.val_transformer)
+            self.train_dataset = tio.SubjectsDataset(train_subjects, transform=self.train_transformer)
+            self.valid_dataset = tio.SubjectsDataset(val_subjects, transform=self.val_transformer)
     
             self.train_loader = torch.utils.data.DataLoader(
-                training_set,
+                self.train_dataset ,
                 batch_size=self.batch_size,
                 shuffle=True,
                 num_workers=self.num_workers,
             )
 
             self.validation_loader = torch.utils.data.DataLoader(
-                validation_set,
+                self.valid_dataset,
                 batch_size=self.batch_size,
                 shuffle=False,
                 num_workers=self.num_workers,

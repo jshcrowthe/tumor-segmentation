@@ -63,7 +63,6 @@ class JacardLoss(nn.Module):
         dice = self.loss(prediction,target)
         return (dice/(2-dice)).mean()
 
-
 class LogCoshLoss(nn.Module):
 
     def __init__(self):

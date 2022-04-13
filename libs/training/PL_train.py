@@ -20,7 +20,6 @@ class Main_Loop(pl.LightningModule):
         self.optimizer = optimizer
         self.optimizer_args= optimizer_args
         self.save_hyperparameters()
-        self.model
 
     def get_model(self,model):
 
@@ -29,7 +28,6 @@ class Main_Loop(pl.LightningModule):
 
         else:
             return "Spelling Mistake"
-
 
     def get_loss(self,loss):
 

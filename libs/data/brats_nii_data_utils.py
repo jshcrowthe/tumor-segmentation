@@ -63,9 +63,8 @@ class nni_utils:
             value.save(os.path.join(dir,str(id),type+ending))
 
     @staticmethod
-    def downsample_preprocess(data_dir,out_dir,type_list,size,n_jobs =1):
+    def downsample_preprocess(subjects,out_dir,type_list,size,n_jobs =1):
 
-        subjects = nni_utils.load_subjects(data_dir,type_list)
 
         preprocessing_transform = tio.Compose([
             tio.ToCanonical(),
