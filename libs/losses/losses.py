@@ -30,7 +30,7 @@ class FocalTverskyLoss(nn.Module):
         tversky = (tp+self.smooth)/(tp+self.alpha*fn + (1-self.alpha)*fp + self.smooth)
         
         if self.weight is not None:
-            tversky = ((1-tversky).pow(self.gamma)*self.weight).sum(dim=1)
+            tversky = ((1-tversky).pow(self.gamma)*self.weight).sum(dim=1)/self.weight.sum()
         else:
             tversky = (1-tversky).pow(self.gamma)
         if self.reduce:
