@@ -2,7 +2,7 @@ import pytorch_lightning as pl
 import torch
 import torch.nn.functional as F
 from metrics.metrics  import accuracy, dice_coef,iou
-from models.stupid_model import OneLayer
+from models.models import OneLayer,PixelModel
 from losses.losses import CrossEntropy, FocalTverskyLoss, DiceLoss, FocalLoss, LogCoshLoss, JacardLoss
 
 class Main_Loop(pl.LightningModule):
@@ -25,7 +25,8 @@ class Main_Loop(pl.LightningModule):
 
         if model =="OneLayer":
             return OneLayer
-
+        elif model == "Pixel":
+            return PixelModel
         else:
             return "Spelling Mistake"
 

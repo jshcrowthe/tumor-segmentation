@@ -1,1 +1,1 @@
-from .stupid_model import OneLayer
+from .models import OneLayer,PixelModel

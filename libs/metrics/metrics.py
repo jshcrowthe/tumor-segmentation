@@ -11,7 +11,8 @@ Usage:
 """
 
 def accuracy(prediction,target):
-    return (prediction == target).float().mean()
+    return (((prediction== target.squeeze())&(target.squeeze()>0)).sum(dim=(1,2,3))/(target.squeeze()>0).float().sum(dim = (1,2,3))).mean()
+
 
 # Mean intersection over union
 

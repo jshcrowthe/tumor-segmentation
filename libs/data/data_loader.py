@@ -15,8 +15,8 @@ class MyDataModule(pl.LightningDataModule):
         out_dir,
         type_list = ["t1"],
         sample_list = ["t1"],
-        batch_size = 8,
-        num_workers =16,
+        batch_size = 4,
+        num_workers =5,
         prepare = False,
         n_jobs = 10,
         size = (48, 60, 48)

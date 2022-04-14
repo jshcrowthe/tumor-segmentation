@@ -7,6 +7,7 @@ class nni_utils:
 
     @staticmethod
     def get_folders(path):
+        print(path)
         folders = os.listdir(path)
         folders = [folder for folder in folders if os.path.isdir(os.path.join(path,folder))]
         folders = sorted(folders,key = lambda x: int(x.split("_")[-1]))
