@@ -3,7 +3,7 @@ import torch
 import torch.nn.functional as F
 from metrics.metrics  import accuracy, dice_coef,iou
 from models.models import OneLayer,PixelModel
-from unet import UNet
+from models.unet_model import Unet
 from losses.losses import CrossEntropy, FocalTverskyLoss, DiceLoss, FocalLoss, LogCoshLoss, JacardLoss
 
 class Main_Loop(pl.LightningModule):
@@ -29,7 +29,7 @@ class Main_Loop(pl.LightningModule):
         elif model == "Pixel":
             return PixelModel
         elif model == "Unet":
-            return UNet
+            return Unet
         else:
             return "Spelling Mistake"
 
