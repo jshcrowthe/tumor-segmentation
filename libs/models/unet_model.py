@@ -10,11 +10,9 @@ Other references:
 https://amaarora.github.io/2020/09/13/unet.html
 """
 class Unet(nn.Module):
-    def __init__(self, input_dim, output_dim, depth=5, num_classes=5) -> None:
+    def __init__(self, depth=5, num_classes=5) -> None:
         super(Unet, self).__init__()
 
-        self.input_dim = input_dim
-        self.output_dim = output_dim
         self.depth = depth
 
         self.channel_dims = [64 * 2.0**(i) for i in range(self.depth)]
