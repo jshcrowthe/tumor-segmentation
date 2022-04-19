@@ -95,4 +95,4 @@ class MyDataModule(pl.LightningDataModule):
         return self.validation_loader
 
     def test_dataloader(self):
-        return self.validation_loader
+        return self.test_loader
