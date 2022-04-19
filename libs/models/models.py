@@ -138,15 +138,15 @@ class PixelModel(nn.Module):
         self.f = nn.Sequential(
             Backbone(),
             Residual(1024),
-            ResLayer(128,512,3,stride = 1),
+            ResLayer(128,512,1,stride = 1),
             Residual(512),
-            ResLayer(64,256,3,stride = 1),
+            ResLayer(64,256,1,stride = 1),
             Residual(256),
-            ResLayer(32,128,3,stride = 1),
+            ResLayer(32,128,1,stride = 1),
             Residual(128),
-            ResLayer(16,64,3,stride = 1),
+            ResLayer(16,64,1,stride = 1),
             Residual(64),
-            ResLayer(8,32,3,stride = 1),
+            ResLayer(8,32,1,stride = 1),
             nn.Conv3d(32,n_classes,3,1,1)
         )
     def forward(self,X):
