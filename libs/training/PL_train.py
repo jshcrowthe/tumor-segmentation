@@ -3,7 +3,7 @@ import torch
 import torch.nn.functional as F
 from metrics.metrics  import accuracy, dice_coef,iou
 from models.models import OneLayer,PixelModel
-from models.unet_model import Unet
+from unet import UNet
 from losses.losses import CrossEntropy, FocalTverskyLoss, DiceLoss, FocalLoss, LogCoshLoss, JacardLoss
 
 class Main_Loop(pl.LightningModule):
@@ -29,7 +29,7 @@ class Main_Loop(pl.LightningModule):
         elif model == "Pixel":
             return PixelModel
         elif model == "Unet":
-            return Unet
+            return UNet
         else:
             return "Spelling Mistake"
 
@@ -95,7 +95,21 @@ class Main_Loop(pl.LightningModule):
             self.log("Train dice_coef",float(dice_coef(logits,targets).cpu().numpy()) , on_epoch=True,on_step = True,batch_size=self.batch_size)
         
         return batch_loss
+    def test_step(self, batch, batch_idx):
 
+        inputs,targets = self.prepare_batch(batch)
+
+        logits = self.model(inputs)
+        batch_loss = self.loss(logits, targets)
+
+        pred = logits.argmax(dim = 1)
+        with torch.no_grad():
+            self.log("Train Loss",float(batch_loss.cpu().numpy()) , on_epoch=True,on_step = True,batch_size=self.batch_size)
+            self.log("Train Acc",float(accuracy(pred,targets).cpu().numpy()) , on_epoch=True,on_step = True,batch_size=self.batch_size)
+            self.log("Train mIoU",float(iou(logits,targets).cpu().numpy()) , on_epoch=True,on_step = True,batch_size=self.batch_size)
+            self.log("Train dice_coef",float(dice_coef(logits,targets).cpu().numpy()) , on_epoch=True,on_step = True,batch_size=self.batch_size)
+        
+        return batch_loss
     def validation_step(self, batch, batch_idx):
 
         inputs,targets = self.prepare_batch(batch)

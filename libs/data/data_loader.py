@@ -30,6 +30,7 @@ class MyDataModule(pl.LightningDataModule):
         self.num_workers = num_workers
         self.train_loader = None
         self.validation_loader = None
+        self.test_loader = None
         self.type_list = type_list
         self.size = (48, 60, 48)
         self.sample_list = sample_list
@@ -38,7 +39,7 @@ class MyDataModule(pl.LightningDataModule):
         self.size = size
         self.valid_dataset = None
         self.train_dataset = None
-
+        self.test_dataset = None
 
     def prepare_data(self):
         if self.prepare:
@@ -53,11 +54,15 @@ class MyDataModule(pl.LightningDataModule):
         if stage == "fit" or stage is None:
             subjects = nni_utils.load_subjects(self.out_dir,self.type_list)
 
-            train_subjects, val_subjects = train_test_split(subjects,test_size = .2,random_state = 42 )
+            train_subjects, other_subjects = train_test_split(subjects,train_size = 800,random_state = 42 )
+            val_subjects, test_subjects = train_test_split(subjects,train_size = 200,random_state = 42 )
+
 
             self.train_dataset = tio.SubjectsDataset(train_subjects, transform=self.train_transformer)
             self.valid_dataset = tio.SubjectsDataset(val_subjects, transform=self.val_transformer)
-    
+            self.test_dataset = tio.SubjectsDataset(test_subjects, transform=self.val_transformer)
+
+
             self.train_loader = torch.utils.data.DataLoader(
                 self.train_dataset ,
                 batch_size=self.batch_size,
@@ -72,6 +77,14 @@ class MyDataModule(pl.LightningDataModule):
                 num_workers=self.num_workers,
             )
 
+
+            self.test_loader = torch.utils.data.DataLoader(
+                self.test_dataset,
+                batch_size=self.batch_size,
+                shuffle=False,
+                num_workers=self.num_workers,
+            )
+
         if stage == "test" or stage is None:
             pass
 
@@ -79,4 +92,7 @@ class MyDataModule(pl.LightningDataModule):
         return self.train_loader
 
     def val_dataloader(self):
+        return self.validation_loader
+
+    def test_dataloader(self):
         return self.validation_loader
