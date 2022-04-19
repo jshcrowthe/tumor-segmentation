@@ -3,9 +3,9 @@ import torch
 import torch.nn.functional as F
 from metrics.metrics  import accuracy, dice_coef,iou
 from models.models import OneLayer,PixelModel
-from unet import UNet
+from models.unet_model import Unet
 from losses.losses import CrossEntropy, FocalTverskyLoss, DiceLoss, FocalLoss, LogCoshLoss, JacardLoss
-
+from models.deeplabv3plus import DeepLabV3Plus
 class Main_Loop(pl.LightningModule):
 
     def __init__(self, model = "OneLayer",loss = "CrossEntropy",optimizer = torch.optim.AdamW,type_list = ["t1"],learning_rate=0.01,num_classes = 2,batch_size = 8,scheduler = None,scheduler_args = {},loss_args = {},model_args = {},optimizer_args = {}):
@@ -29,7 +29,9 @@ class Main_Loop(pl.LightningModule):
         elif model == "Pixel":
             return PixelModel
         elif model == "Unet":
-            return UNet
+            return Unet
+        elif model == "deeplabv3plus":
+            return DeepLabV3Plus
         else:
             return "Spelling Mistake"
 
