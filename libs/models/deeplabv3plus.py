@@ -110,7 +110,7 @@ class DeepLabV3Plus(nn.Module):
         #channels = self.backbone.feature_info.channels()
         #[256, 2048]
         
-        channels = [64, 512]
+        channels = [128, 1024 ]
         self.lowlevelfeatures = LowLevelFeatures(channels[0],num_low_level_filters)
         self.encoder = AtrousConvEncoder(channels[1], num_filters) 
         self.decoder = Decoder(num_classes=num_classes, num_low_level_filters=num_low_level_filters,num_filters=num_filters)
@@ -121,16 +121,17 @@ class DeepLabV3Plus(nn.Module):
         x=self.encoder(features[1])
         
         x2=self.lowlevelfeatures(features[0])        
-        _, _, x2H, x2W=x2.shape      
-        x = F.interpolate(x, size=(x2H,x2W), 
-                          mode='bilinear',
-                          align_corners=False)
+        _, _, x2H, x2W , x2Z= x2.shape      
+        x = F.interpolate(x, size=(x2H,x2W,x2Z), 
+                          mode='nearest' )
         
         x=torch.cat((x,x2),dim=1)        
         x=self.decoder(x)        
-        _, _, xH, xW = x.shape
+        
         return F.interpolate(x, 
-                             size=(xH,xW), 
-                             mode='bilinear',
-                             align_corners=False)
+                             #size=(xH,xW), 
+                             mode='nearest',
+                              
+                             scale_factor=4
+                             )
         
