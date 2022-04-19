@@ -1,6 +1,3 @@
-
-import timm  #https://github.com/rwightman/pytorch-image-models | https://fastai.github.io/timmdocs/ 
-
 import torch
 from torch import nn
 from typing import  List
