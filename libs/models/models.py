@@ -82,7 +82,7 @@ class Backbone(nn.Module):
 
         l4 = self.layer4(l3) 
 
-        return l4
+        return l1, l4
 
 class ResBlock(nn.Module):
     def __init__(self, in_channels,out_channels,stride=1,downsample = False):
