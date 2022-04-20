@@ -1,5 +1,4 @@
 import pytorch_lightning as pl
-from pathlib import Path
 import os 
 import torchio as tio
 import torch
