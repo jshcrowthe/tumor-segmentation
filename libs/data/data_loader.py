@@ -16,7 +16,6 @@ class MyDataModule(pl.LightningDataModule):
         sample_list = ["t1"],
         batch_size = 4,
         num_workers =5,
-        prepare = False,
         n_jobs = 10,
         size = (48, 60, 48)
     ):
@@ -24,7 +23,6 @@ class MyDataModule(pl.LightningDataModule):
         self.data_dir = data_dir
         self.out_dir = out_dir
         self.n_jobs = n_jobs
-        self.prepare = prepare
         self.batch_size = batch_size
         self.num_workers = num_workers
         self.train_loader = None
@@ -41,11 +39,10 @@ class MyDataModule(pl.LightningDataModule):
         self.test_dataset = None
 
     def prepare_data(self):
-        if self.prepare:
-            subjects = nni_utils.load_subjects(self.data_dir,self.type_list)
-            if not os.path.exists(self.out_dir):
-                os.mkdir(self.out_dir)
-            nni_utils.downsample_preprocess(subjects,self.out_dir,self.sample_list,size = self.size,n_jobs = self.n_jobs)
+        subjects = nni_utils.load_subjects(self.data_dir,self.type_list)
+        if not os.path.exists(self.out_dir):
+            os.mkdir(self.out_dir)
+        nni_utils.downsample_preprocess(subjects,self.out_dir,self.sample_list,size = self.size,n_jobs = self.n_jobs)
 
 
     def setup(self, stage=None):
