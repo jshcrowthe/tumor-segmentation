@@ -38,7 +38,7 @@ class MyDataModule(pl.LightningDataModule):
         self.train_dataset = None
         self.test_dataset = None
 
-    def prepare_data(self):
+    def preprocessing(self):
         subjects = nni_utils.load_subjects(self.data_dir,self.type_list)
         if not os.path.exists(self.out_dir):
             os.mkdir(self.out_dir)

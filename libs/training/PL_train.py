@@ -106,10 +106,10 @@ class Main_Loop(pl.LightningModule):
 
         pred = logits.argmax(dim = 1)
         with torch.no_grad():
-            self.log("Train Loss",float(batch_loss.cpu().numpy()) , on_epoch=True,on_step = True,batch_size=self.batch_size)
-            self.log("Train Acc",float(accuracy(pred,targets).cpu().numpy()) , on_epoch=True,on_step = True,batch_size=self.batch_size)
-            self.log("Train mIoU",float(iou(logits,targets).cpu().numpy()) , on_epoch=True,on_step = True,batch_size=self.batch_size)
-            self.log("Train dice_coef",float(dice_coef(logits,targets).cpu().numpy()) , on_epoch=True,on_step = True,batch_size=self.batch_size)
+            self.log("Test Loss",float(batch_loss.cpu().numpy()) , on_epoch=True,on_step = True,batch_size=self.batch_size)
+            self.log("Test Acc",float(accuracy(pred,targets).cpu().numpy()) , on_epoch=True,on_step = True,batch_size=self.batch_size)
+            self.log("Test mIoU",float(iou(logits,targets).cpu().numpy()) , on_epoch=True,on_step = True,batch_size=self.batch_size)
+            self.log("Test dice_coef",float(dice_coef(logits,targets).cpu().numpy()) , on_epoch=True,on_step = True,batch_size=self.batch_size)
         
         return batch_loss
     def validation_step(self, batch, batch_idx):
