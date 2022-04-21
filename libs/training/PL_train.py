@@ -2,8 +2,13 @@ import pytorch_lightning as pl
 import torch
 import torch.nn.functional as F
 from metrics.metrics import accuracy, dice_coef, iou
-from models.models import OneLayer, PixelModel
-from models.unet_model import Unet
+from models import (
+    OneLayer,
+    PixelModel,
+    Unet,
+    DeepLabV3Plus,
+    CustomModel,
+)
 from losses.losses import (
     CrossEntropy,
     FocalTverskyLoss,
@@ -12,9 +17,6 @@ from losses.losses import (
     LogCoshLoss,
     JacardLoss,
 )
-from models.deeplabv3plus import DeepLabV3Plus
-from models.custom_model import CustomModel
-
 
 class Main_Loop(pl.LightningModule):
     def __init__(
