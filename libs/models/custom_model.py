@@ -1,6 +1,7 @@
 import torch
 from torch import nn
 
+
 class CustomModel(nn.Module):
     def __init__(self, in_channels=3, out_channels=1, init_features=32):
         super(CustomModel, self).__init__()
@@ -15,27 +16,29 @@ class CustomModel(nn.Module):
         self.pool1 = nn.MaxPool3d(kernel_size=2, stride=2)
 
         self.encoder2 = nn.Sequential(
-            nn.Conv3d(features, features*2, kernel_size=5, padding=2, bias=False),
+            nn.Conv3d(features, features * 2, kernel_size=5, padding=2, bias=False),
             nn.LazyBatchNorm3d(),
             nn.ReLU(),
         )
         self.pool2 = nn.MaxPool3d(kernel_size=2, stride=2)
 
         self.encoder3 = nn.Sequential(
-            nn.Conv3d(features*2, features*4, kernel_size=3, padding=1, bias=False),
+            nn.Conv3d(features * 2, features * 4, kernel_size=3, padding=1, bias=False),
             nn.LazyBatchNorm3d(),
             nn.ReLU(),
         )
         self.pool3 = nn.AvgPool3d(kernel_size=2, stride=2)
         self.encoder4 = nn.Sequential(
-            nn.Conv3d(features*4, features*8, kernel_size=3, padding=1, bias=False),
+            nn.Conv3d(features * 4, features * 8, kernel_size=3, padding=1, bias=False),
             nn.LazyBatchNorm3d(),
             nn.ReLU(),
         )
         self.pool4 = nn.AvgPool3d(kernel_size=2, stride=2)
 
         self.bottleneck = self.decoder3 = nn.Sequential(
-            nn.Conv3d(features*8, features*16, kernel_size=5, padding=2, bias=False),
+            nn.Conv3d(
+                features * 8, features * 16, kernel_size=5, padding=2, bias=False
+            ),
             nn.LazyBatchNorm3d(),
             nn.ReLU(),
         )
@@ -44,7 +47,9 @@ class CustomModel(nn.Module):
             features * 16, features * 8, kernel_size=2, stride=2
         )
         self.decoder4 = nn.Sequential(
-            nn.Conv3d(features*16, features*8, kernel_size=3, padding=1, bias=False),
+            nn.Conv3d(
+                features * 16, features * 8, kernel_size=3, padding=1, bias=False
+            ),
             nn.LazyBatchNorm3d(),
             nn.ReLU(),
         )
@@ -52,7 +57,7 @@ class CustomModel(nn.Module):
             features * 8, features * 4, kernel_size=2, stride=2
         )
         self.decoder3 = nn.Sequential(
-            nn.Conv3d(features*8, features*4, kernel_size=3, padding=1, bias=False),
+            nn.Conv3d(features * 8, features * 4, kernel_size=3, padding=1, bias=False),
             nn.LazyBatchNorm3d(),
             nn.ReLU(),
         )
@@ -60,7 +65,7 @@ class CustomModel(nn.Module):
             features * 4, features * 2, kernel_size=2, stride=2
         )
         self.decoder2 = self.decoder3 = nn.Sequential(
-            nn.Conv3d(features*4, features*2, kernel_size=5, padding=2, bias=False),
+            nn.Conv3d(features * 4, features * 2, kernel_size=5, padding=2, bias=False),
             nn.LazyBatchNorm3d(),
             nn.ReLU(),
         )
@@ -68,7 +73,7 @@ class CustomModel(nn.Module):
             features * 2, features, kernel_size=2, stride=2
         )
         self.decoder1 = self.decoder3 = nn.Sequential(
-            nn.Conv3d(features*2, features, kernel_size=5, padding=2, bias=False),
+            nn.Conv3d(features * 2, features, kernel_size=5, padding=2, bias=False),
             nn.LazyBatchNorm3d(),
             nn.ReLU(),
         )
