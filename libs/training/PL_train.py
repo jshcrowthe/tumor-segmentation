@@ -6,6 +6,7 @@ from models.models import OneLayer,PixelModel
 from models.unet_model import Unet
 from losses.losses import CrossEntropy, FocalTverskyLoss, DiceLoss, FocalLoss, LogCoshLoss, JacardLoss
 from models.deeplabv3plus import DeepLabV3Plus
+from models.custom_model import CustomModel
 class Main_Loop(pl.LightningModule):
 
     def __init__(self, model = "OneLayer",loss = "CrossEntropy",optimizer = torch.optim.AdamW,type_list = ["t1"],learning_rate=0.01,num_classes = 2,batch_size = 8,scheduler = None,scheduler_args = {},loss_args = {},model_args = {},optimizer_args = {}):
@@ -22,7 +23,7 @@ class Main_Loop(pl.LightningModule):
         self.optimizer_args= optimizer_args
         self.save_hyperparameters()
 
-    def get_model(self,model):
+    def get_model(self, model):
 
         if model =="OneLayer":
             return OneLayer
@@ -32,6 +33,8 @@ class Main_Loop(pl.LightningModule):
             return Unet
         elif model == "deeplabv3plus":
             return DeepLabV3Plus
+        elif model == "custom":
+            return CustomModel
         else:
             return "Spelling Mistake"
 
