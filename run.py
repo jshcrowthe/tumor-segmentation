@@ -21,7 +21,7 @@ size = (48, 64, 48)
 model = input("Enter model to train: ")
 
 batch_size = 4
-epochs = 1
+epochs = 50
 type_list = ['t1', 't2', 'flair']
 weight = torch.from_numpy(np.array([0.1, 1, 1, 1, 1])).float().cuda()
 model_args = {}
