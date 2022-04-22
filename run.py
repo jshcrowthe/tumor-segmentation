@@ -19,24 +19,37 @@ RAW_DATA_PATH = os.path.abspath("./data/raw")
 
 size = (48, 64, 48)
 model = input("Enter model to train: ")
-criterion = "Focal"
+
 batch_size = 4
-epochs = 50
+epochs = 1
 type_list = ['t1', 't2', 'flair']
 weight = torch.from_numpy(np.array([0.1, 1, 1, 1, 1])).float().cuda()
 model_args = {}
 
 # Experiments
-losses = ['CrossEntropy', 'Focal', 'LogCosh', 'Dice']
+losses = ['Focal', 'LogCosh', 'Dice']
 lr_schedules = [
   optim.lr_scheduler.ExponentialLR,
   optim.lr_scheduler.CosineAnnealingLR,
   optim.lr_scheduler.StepLR,
 ]
+
+scheduler_args = [
+  {"gamma": 0.95},
+  {"T_max":10},
+  {"step_size":5}
+]
+
 optimizers = [
   optim.Adam,
   optim.RMSprop,
   optim.Adagrad
+]
+
+optimizer_args = [
+  {"amsgrad": True},
+  {"centered":True},
+  {}
 ]
 
 # Data TRansforms
@@ -87,20 +100,21 @@ if len(os.listdir(PROCESSED_DATA_PATH)) <= 1:
     data_module.preprocessing()
 
 for loss in losses:
-  for lr_schedule in lr_schedules:
-    for optimizer in optimizers:
-      trainer = pl.Trainer(gpus=1, max_epochs=epochs)
-      main = Main_Loop(
-        model=model,
-        loss=loss,
-        type_list=type_list,
-        scheduler=lr_schedule,
-        scheduler_args={"gamma": 0.95},
-        model_args=model_args,
-        loss_args={"weight": weight},
-        batch_size=batch_size,
-        optimizer=optimizer,
-        optimizer_args={"amsgrad": True},
-      )
-      trainer.fit(main, data_module)
-      trainer.test(main, data_module)
+  for lr_schedule,s_args in zip(lr_schedules,scheduler_args):
+    for optimizer,o_args in zip(optimizers,optimizer_args):
+      for type in type_list:
+        trainer = pl.Trainer(gpus=1, max_epochs=epochs)
+        main = Main_Loop(
+          model=model,
+          loss=loss,
+          type_list=[type],
+          scheduler=lr_schedule,
+          scheduler_args=s_args,
+          model_args=model_args,
+          loss_args={"weight": weight},
+          batch_size=batch_size,
+          optimizer=optimizer,
+          optimizer_args=o_args,
+        )
+        trainer.fit(main, data_module)
+        trainer.test(main, data_module)
