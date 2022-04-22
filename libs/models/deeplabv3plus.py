@@ -2,9 +2,9 @@ import torch
 from torch import nn
 from torch.nn import functional as F
 from .models import Backbone
-
-# Paper https://arxiv.org/pdf/1802.02611.pdf
-
+from .Resnet101 import Resnet101
+ 
+#Paper https://arxiv.org/pdf/1802.02611.pdf
 
 class AtrousConvEncoder(nn.Module):
     def __init__(self, in_channels: int, out_channels: int = 256) -> None:
@@ -122,24 +122,15 @@ class DeepLabV3Plus(nn.Module):
     ) -> None:
 
         super().__init__()
-
-        # ResNet-101
-        # self.backbone = timm.create_model(model_name = backbone_name, output_stride=output_stride,out_indices=(1,4),features_only=True)
-        self.backbone = Backbone()
-
-        # https://rwightman.github.io/pytorch-image-models/feature_extraction/
-        # channels = self.backbone.feature_info.channels()
-        # [256, 2048]
-
-        channels = [128, 1024]
-        self.lowlevelfeatures = LowLevelFeatures(channels[0], num_low_level_filters)
-        self.encoder = AtrousConvEncoder(channels[1], num_filters)
-        self.decoder = Decoder(
-            num_classes=num_classes,
-            num_low_level_filters=num_low_level_filters,
-            num_filters=num_filters,
-        )
-
+ 
+        #ResNet-101           
+        self.backbone = Resnet101()
+        
+        channels = [256, 2048]
+        self.lowlevelfeatures = LowLevelFeatures(channels[0],num_low_level_filters)
+        self.encoder = AtrousConvEncoder(channels[1], num_filters) 
+        self.decoder = Decoder(num_classes=num_classes, num_low_level_filters=num_low_level_filters,num_filters=num_filters)
+        
     def forward(self, x):
 
         features = self.backbone(x)
