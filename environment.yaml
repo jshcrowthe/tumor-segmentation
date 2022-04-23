@@ -18,8 +18,10 @@ dependencies:
 - pip:
   - ipykernel
   - ipywidgets
+  - ipyfilechooser
   - IProgress
   - opencv-python
   - Pillow
   - tqdm
-  - torchio 
+  - torchio
+  - black[jupyter]
