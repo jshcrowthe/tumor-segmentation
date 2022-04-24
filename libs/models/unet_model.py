@@ -131,7 +131,6 @@ class ConvBlock(nn.Module):
         super(ConvBlock, self).__init__()
 
         self.conv_block = nn.Sequential(
-            # Convolutions are unpadded
             nn.Conv3d(in_channels=input_dim, out_channels=output_dim, kernel_size=3),
             nn.ReLU(),
             nn.Conv3d(in_channels=output_dim, out_channels=output_dim, kernel_size=3),
