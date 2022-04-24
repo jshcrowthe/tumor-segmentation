@@ -1,33 +1,34 @@
-from collections import OrderedDict
-
 import torch
 import torch.nn as nn
 
-def conv_block(out_features):
+def conv_block(in_features, out_features):
     return nn.Sequential(
-        nn.LazyConv3d(
+        nn.Conv3d(
+            in_channels=in_features,
             out_channels=out_features,
             kernel_size=3,
             padding=1,
             bias=False,
         ),
-        nn.LazyBatchNorm3d(),
+        nn.BatchNorm3d(out_features),
         nn.ReLU(),
-        nn.LazyConv3d(
+        nn.Conv3d(
+            in_channels=out_features,
             out_channels=out_features,
             kernel_size=3,
             padding=1,
             bias=False,
         ),
-        nn.LazyBatchNorm3d(),
+        nn.BatchNorm3d(out_features),
         nn.ReLU(),
-        nn.LazyConv3d(
+        nn.Conv3d(
+            in_channels=out_features,
             out_channels=out_features,
             kernel_size=3,
             padding=1,
             bias=False,
         ),
-        nn.LazyBatchNorm3d(),
+        nn.BatchNorm3d(out_features),
         nn.ReLU(),
     )
 
@@ -39,35 +40,39 @@ class CustomModel(nn.Module):
         features = init_features
 
         # Encoding layers
-        self.encoder1 = conv_block(features) # Input channels is always 1
+        self.encoder1 = conv_block(in_channels, features) # Input channels is always 1
         self.pool1 = nn.MaxPool3d(kernel_size=2, stride=2)
-        self.encoder2 = conv_block(features * 2)
+        self.encoder2 = conv_block(features, features * 2)
         self.pool2 = nn.MaxPool3d(kernel_size=2, stride=2)
         self.dropout1 = nn.Dropout3d()
-        self.encoder3 = conv_block(features * 4)
+        self.encoder3 = conv_block(features * 2, features * 4)
         self.pool3 = nn.AvgPool3d(kernel_size=2, stride=2)
-        self.encoder4 = conv_block(features * 8)
+        self.encoder4 = conv_block(features * 4, features * 8)
         self.pool4 = nn.AvgPool3d(kernel_size=2, stride=2)
         self.dropout2 = nn.Dropout3d()
 
         # Intermediate transition layer
-        self.transition = conv_block(features * 16)
+        self.transition = conv_block(features * 8, features * 16)
 
         # Decoding layers
         self.upconv4 = nn.ConvTranspose3d(features * 16, features * 8, kernel_size=2, stride=2)
-        self.decoder4 = conv_block(features * 8)
+        self.decoder4 = conv_block(features * 16, features * 8)
 
         self.upconv3 = nn.ConvTranspose3d(features * 8, features * 4, kernel_size=2, stride=2)
-        self.decoder3 = conv_block(features * 4)
+        self.decoder3 = conv_block(features * 8, features * 4)
 
         self.upconv2 = nn.ConvTranspose3d(features * 4, features * 2, kernel_size=2, stride=2)
-        self.decoder2 = conv_block(features * 2)
+        self.decoder2 = conv_block(features * 4, features * 2)
 
         self.upconv1 = nn.ConvTranspose3d(features * 2, features, kernel_size=2, stride=2)
-        self.decoder1 = conv_block(features)
+        self.decoder1 = conv_block(features * 2, features)
 
         # Final output layer
-        self.conv = nn.LazyConv3d(out_channels=num_classes, kernel_size=1)
+        self.conv = nn.Conv3d(
+            in_channels=features,
+            out_channels=num_classes,
+            kernel_size=1
+        )
 
     def forward(self, x):
         enc1 = self.encoder1(x)
