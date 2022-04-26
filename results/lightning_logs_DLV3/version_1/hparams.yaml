@@ -1,0 +1,31 @@
+batch_size: 4
+learning_rate: 0.01
+loss: Focal
+loss_args:
+  weight: !!python/object/apply:torch._utils._rebuild_tensor_v2
+  - !!python/object/apply:torch.storage._load_from_bytes
+    - !!binary |
+      gAKKCmz8nEb5IGqoUBkugAJN6QMugAJ9cQAoWBAAAABwcm90b2NvbF92ZXJzaW9ucQFN6QNYDQAA
+      AGxpdHRsZV9lbmRpYW5xAohYCgAAAHR5cGVfc2l6ZXNxA31xBChYBQAAAHNob3J0cQVLAlgDAAAA
+      aW50cQZLBFgEAAAAbG9uZ3EHSwR1dS6AAihYBwAAAHN0b3JhZ2VxAGN0b3JjaApGbG9hdFN0b3Jh
+      Z2UKcQFYDgAAADk0MDYxMzU0Mjc2NTI4cQJYBgAAAGN1ZGE6MHEDSwVOdHEEUS6AAl1xAFgOAAAA
+      OTQwNjEzNTQyNzY1MjhxAWEuBQAAAAAAAADNzMw9AACAPwAAgD8AAIA/AACAPw==
+  - 0
+  - !!python/tuple
+    - 5
+  - !!python/tuple
+    - 1
+  - false
+  - !!python/object/apply:collections.OrderedDict
+    - []
+model: deeplabv3plus
+model_args: {}
+num_classes: 2
+optimizer: !!python/name:torch.optim.adam.Adam ''
+optimizer_args:
+  amsgrad: true
+scheduler: !!python/name:torch.optim.lr_scheduler.ExponentialLR ''
+scheduler_args:
+  gamma: 0.95
+type_list:
+- t2
