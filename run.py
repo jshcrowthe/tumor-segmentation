@@ -98,23 +98,25 @@ if len(os.listdir(RAW_DATA_PATH)) <= 1:
 if len(os.listdir(PROCESSED_DATA_PATH)) <= 1:
     print("Processing images")
     data_module.preprocessing()
-
+i=0
 for loss in losses:
   for lr_schedule,s_args in zip(lr_schedules,scheduler_args):
     for optimizer,o_args in zip(optimizers,optimizer_args):
       for type in type_list:
-        trainer = pl.Trainer(gpus=1, max_epochs=epochs)
-        main = Main_Loop(
-          model=model,
-          loss=loss,
-          type_list=[type],
-          scheduler=lr_schedule,
-          scheduler_args=s_args,
-          model_args=model_args,
-          loss_args={"weight": weight},
-          batch_size=batch_size,
-          optimizer=optimizer,
-          optimizer_args=o_args,
-        )
-        trainer.fit(main, data_module)
-        trainer.test(main, data_module)
+        if i >65:
+          trainer = pl.Trainer(gpus=1, max_epochs=epochs)
+          main = Main_Loop(
+            model=model,
+            loss=loss,
+            type_list=[type],
+            scheduler=lr_schedule,
+            scheduler_args=s_args,
+            model_args=model_args,
+            loss_args={"weight": weight},
+            batch_size=batch_size,
+            optimizer=optimizer,
+            optimizer_args=o_args,
+          )
+          trainer.fit(main, data_module)
+          trainer.test(main, data_module)
+        i+=1
