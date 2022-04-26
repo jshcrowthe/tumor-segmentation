@@ -16,15 +16,15 @@ https://amaarora.github.io/2020/09/13/unet.html
 
 
 class Unet(nn.Module):
-    def __init__(self, depth=4, num_classes=5) -> None:
+    def __init__(self, depth=5, num_classes=5) -> None:
         super(Unet, self).__init__()
 
         self.depth = depth
 
-        # Maximum depth 4, otherwise dimensions are too small. Channels must be passed as integers to torch.nn
-        self.channel_dims = [int(64 * 2.0 ** (i)) for i in range(self.depth)]
+        # Channels must be passed as integers to torch.nn
+        self.channel_dims = [int(16 * 2.0 ** (i)) for i in range(self.depth)]
 
-        self.up_channel = nn.Conv3d(in_channels=1, out_channels=64, kernel_size=1)
+        self.up_channel = nn.Conv3d(in_channels=1, out_channels=self.channel_dims[0], kernel_size=1)
         self.down = UnetDown(self.channel_dims)
         self.bottom = ConvBlock(self.channel_dims[-1], self.channel_dims[-1])
         self.up = UnetUp(self.channel_dims)
@@ -41,6 +41,7 @@ class Unet(nn.Module):
 
     def forward(self, input):
         input = self.up_channel(input)
+
         out, features = self.down(input)
         out = self.bottom(out)
         out = self.up(out, features)
@@ -96,7 +97,7 @@ class UnetUp(nn.Module):
             int(math.floor(d_delta / 2)) : int(math.floor(-d_delta / 2)),
             int(math.floor(h_delta / 2)) : int(math.floor(-h_delta / 2)),
             int(math.floor(w_delta / 2)) : int(math.floor(-w_delta / 2)),
-        ]
+        ].cuda()
 
         return res
 
