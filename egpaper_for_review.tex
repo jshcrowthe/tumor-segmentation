@@ -155,7 +155,18 @@ The Unet model was first introduced for 2-D biomedical image segmentation tasks 
 
 The custom model was based off of an existing 3D Unet implementation (see \cite{10.7554/eLife.57613}). Given the Unet base, many of the characteristics of the Unet model are present in the custom model as well. Unet is designed with max pooling layers in between stacks of convolutional layers. The custom model explores the effect of different aggregation and generalization with the final model using a combination of max pooling, average pooling, as well as 3D dropout layers to attempt to improve gradient flow and better propagate feature representation throughout the network.
 
+DeepLabV3+ and Unet both have well documented architectures that can be explored in \cite{https://doi.org/10.48550/arxiv.1802.02611} and \cite{https://doi.org/10.48550/arxiv.1505.04597} respectively. The custom model used for these experiments, while taking queues from both models, is distinct from both.
 
+In convolutional neural networks pooling is used as a down-sampling methodology that helps with overfitting while also improving computational speeds by reducing the dimensionality of the inputs. There are a number of different pooling strategies that approach the task from mathematically unique perspectives. For this effort several methods explored in \cite{https://doi.org/10.48550/arxiv.2009.07485} were considered. However, to simplify the optimization space, due to time restrictions, only max pooling and average pooling were used.
+
+As with Unet, the custom model uses stacks of convolutional layers as encoding layers each separated by pooling layers. Each encoding stack increasing the channel depth of the previous input. The first two encoding layers use max pooling, while the second two use average pooling. The architecture can be seen in figure \ref{fig:custom-model-arch}.
+
+\begin{figure}[h]
+\centering
+\includegraphics[width=0.5\textwidth]{figures/custom-model.png}
+\caption{Custom network model architecture}
+\label{fig:custom-model-arch}
+\end{figure}
 \subsection{Methodology}
 
 Do we want to go in-depth on methodology here?
@@ -193,8 +204,6 @@ Josh Crowther & Collaboration Setup & Integrated workflow tooling to facilitate 
 Josh Crowther & Platform standardization & Consolidated the various training implementations that were being used for reproducible training and validation \\
 Josh Crowther & Experiment Scripting & Gathered requirements on hyperparameter tuning, authored, and validated scripts used for running all model experiments \\
 Josh Crowther & Custom Model Design/Implementation & Researched the strategy for diverse aggregation methods and implemented the custom model based on that research \\
-
-
 
 Team Member 2 & Implementation and Analysis & Trained the LSTM of the encoder and analyzed the results. Analyzed effect of number of nodes in hidden state.  Implemented Convolutional LSTM. \\
 \hline
