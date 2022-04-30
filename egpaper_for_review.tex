@@ -7,6 +7,9 @@
 \usepackage{amsmath}
 \usepackage{amssymb}
 
+
+
+
 % Include other packages here, before hyperref.
 
 % If you comment hyperref and then uncomment it, you should delete
@@ -142,29 +145,21 @@ A problem we encountered was that due to the class imbalance the metrics go to $
 
 We did not end up using a model based on Pixel Shuffle \cite{PIX} or Depth to Space \cite{DEP}. These methods did not generalize well to 3D data, and the models always had the metrics drop to zero, meaning that back-prop was not working well for the task.
 
-The Deeplabv3+ model is an updated version of Deeplabv3+. The architecture was improved by the authors of the original model by adding an encoder-decoder structure. The encoder is similar to DeepLabv3+, but with the addition of the Separable Atrous Convolution. The Decoder consists of upsampling operations to upscale the output of the encoder. We used ResNet-101 as the Backbone model in our implementation.
+
+Keep it to short descriptions of Unet and DeepLabV3+ and we need to got in-depth on our custom model. 
+
+The Deeplabv3+ model is an updated version of Deeplabv3. The architecture was improved by the authors of the original model by 
+ adding an encoder-decoder structure. The encoder is similar to DeepLabv3, but with the addition of the Separable Atrous Convolution. The Decoder consists of upsampling operations to upscale the ouput of the encoder. We used ResNet-101 as the Backbone model in our implementation.
  
 The Unet model was first introduced for 2-D biomedical image segmentation tasks as an improvement upon the sliding window approach to localize and label regions around each pixel. Unet utilizes a contracting path to increase output resolution and an expanding path to combine results from the contracting path in order to localize high resolution features. 2-D Unet has provided good performance on biomedical segmentation tasks when combined with data augmentation. Our goal is to design a 3-D version of Unet to experiment if the strong segmentation performance also applies to volumes.
 
 The custom model was based off of an existing 3D Unet implementation (see \cite{10.7554/eLife.57613}). Given the Unet base, many of the characteristics of the Unet model are present in the custom model as well. Unet is designed with max pooling layers in between stacks of convolutional layers. The custom model explores the effect of different aggregation and generalization with the final model using a combination of max pooling, average pooling, as well as 3D dropout layers to attempt to improve gradient flow and better propagate feature representation throughout the network.
 
-\subsubsection{Custom Model}
 
-DeepLabV3+ and Unet both have well documented architectures that can be explored in \cite{https://doi.org/10.48550/arxiv.1802.02611} and \cite{https://doi.org/10.48550/arxiv.1505.04597}. The custom model used for these experiments, while taking queues from both models, is distinct from both.
-
-In convolutional neural networks pooling is used as a down-sampling methodology that helps with overfitting while also improving computational speeds by reducing the dimensionality of the inputs. There are a number of different pooling strategies that approach the task from mathematically unique perspectives. For this effort several methods explored in \cite{https://doi.org/10.48550/arxiv.2009.07485} were considered. However, to simplify the optimization space, due to time restrictions, only max pooling and average pooling were used.
-
-As with Unet, the custom model uses stacks of convolutional layers as encoding layers each separated by pooling layers. Each encoding stack increasing the channel depth of the previous input. The first two encoding layers use max pooling, while the second two use average pooling. The architecture can be seen in figure \ref{fig:custom-model-arch}.
-
-\begin{figure}[h]
-\centering
-\includegraphics[width=0.5\textwidth]{figures/custom-model.png}
-\caption{Custom network model architecture}
-\label{fig:custom-model-arch}
-\end{figure}
 \subsection{Methodology}
 
 Do we want to go in-depth on methodology here?
+
 
 (10 points) What did you do exactly? How did you solve the problem? Why did you think it would be successful? Is anything new in your approach? 
 
