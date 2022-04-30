@@ -150,7 +150,7 @@ The custom model was based off of an existing 3D Unet implementation (see \cite{
 
 \subsubsection{Custom Model}
 
-DeepLabV3+ and Unet both have well documented architectures that can be explored in \cite{https://doi.org/10.48550/arxiv.1802.02611} and \cite{https://doi.org/10.48550/arxiv.1505.04597}. The custom model used for these experiments, while taking queues from both models, is distinct from both.
+DeepLabV3+ and Unet both have well documented architectures that can be explored in \cite{https://doi.org/10.48550/arxiv.1802.02611} and \cite{https://doi.org/10.48550/arxiv.1505.04597} respectively. The custom model used for these experiments, while taking queues from both models, is distinct from both.
 
 In convolutional neural networks pooling is used as a down-sampling methodology that helps with overfitting while also improving computational speeds by reducing the dimensionality of the inputs. There are a number of different pooling strategies that approach the task from mathematically unique perspectives. For this effort several methods explored in \cite{https://doi.org/10.48550/arxiv.2009.07485} were considered. However, to simplify the optimization space, due to time restrictions, only max pooling and average pooling were used.
 
@@ -198,8 +198,6 @@ Josh Crowther & Collaboration Setup & Integrated workflow tooling to facilitate 
 Josh Crowther & Platform standardization & Consolidated the various training implementations that were being used for reproducible training and validation \\
 Josh Crowther & Experiment Scripting & Gathered requirements on hyperparameter tuning, authored, and validated scripts used for running all model experiments \\
 Josh Crowther & Custom Model Design/Implementation & Researched the strategy for diverse aggregation methods and implemented the custom model based on that research \\
-
-
 
 Team Member 2 & Implementation and Analysis & Trained the LSTM of the encoder and analyzed the results. Analyzed effect of number of nodes in hidden state.  Implemented Convolutional LSTM. \\
 \hline
