@@ -1,0 +1,543 @@
+\documentclass[10pt,twocolumn,letterpaper]{article}
+
+\usepackage{cvpr}
+\usepackage{times}
+\usepackage{epsfig}
+\usepackage{graphicx,animate}
+\usepackage{amsmath}
+\usepackage{amssymb}
+
+
+
+
+% Include other packages here, before hyperref.
+
+% If you comment hyperref and then uncomment it, you should delete
+% egpaper.aux before re-running latex.  (Or just hit 'q' on the first latex
+% run, let it finish, and you should be clear).
+\usepackage[pagebackref=true,breaklinks=true,letterpaper=true,colorlinks,bookmarks=false]{hyperref}
+
+\cvprfinalcopy % *** Uncomment this line for the final submission
+
+\def\cvprPaperID{****} % *** Enter the CVPR Paper ID here
+\def\httilde{\mbox{\tt\raisebox{-.5ex}{\symbol{126}}}}
+
+% Pages are numbered in submission mode, and unnumbered in camera-ready
+\ifcvprfinal\pagestyle{empty}\fi
+\begin{document}
+
+%%%%%%%%% TITLE
+\title{Brain Tumor Segmentation with Deep Neural Networks}
+
+\author{Joshua Crowther\\
+Georgia Institute of Technology\\
+{\tt\small jcrowther9@gatech.edu}
+\and
+Lukas Dauterman\\
+Georgia Institute of Technology\\
+{\tt\small ldauterman3@gatech.edu}
+\and
+Barry Cheng\\
+Georgia Institute of Technology\\
+{\tt\small barrycheng@gatech.edu}
+\and
+Julio Moscon\\
+Georgia Institute of Technology\\
+{\tt\small Email@gatech.edu}
+}
+
+\maketitle
+%\thispagestyle{empty}
+
+%%%%%%%%% ABSTRACT
+\begin{abstract}
+    Identifying brain Tumors in MRIs is a large time cost for radiologist. This process can take days of a radiologists work, and is time critical work to identify cancer. In order to reduce the time it takes to address these issues, we are training deep neural networks on the BRATS MRIs to segment tumors in MRIs. In this we applied Unet, DeepLabV3+, and our own network. We found that our custom network performed the best on all the metrics, while Unet had the lowest false positive rate, and DeepLabV3+ had resolution issues.
+\end{abstract}
+
+%%%%%%%%% BODY TEXT
+\section{Introduction}
+
+\subsection{Problem}
+
+Radiologists are a finite and expensive resources for identifying brain tumors in MRIs\cite{RAD}. Can we train a DNN to predict tumors in MRIs faster and more accurately than radiologists? The time saved by using a model could mean the difference between a patient living or dying.
+
+To attempt this, we have trained 3 different models Unet, DeepLabV3+, and a custom model to identify gliomas and related tissue disorders in MRIs. 
+
+\subsection{MRI Background}
+
+MRIs are used to get detailed 3D image of patients brains. Radio waves stimulate radio emissions of water molecules in the brain in a strong magnetic field to generate MRIs. The pulse frequency of the radio wave results in image types base on tissue characteristics. High frequency pulses are T1 images, medium frequency are T2 images, and low frequency are FLAIR images\cite{MRI}.
+
+Radiologists choose the MRI type depending on the cancer. The radiologist uses the MRI volume to examine slices to identify the tumors. Radiologists are a finite resource that require training and time to identify tumors\cite{RAD}.
+
+
+\subsection{Data}
+
+For training we used the BRATS 2021 dataset\cite{BRATS}. The Radiolocial Society of North America created the dataset to drive research on glioma segmentation. The MRIs were labeled by one of 4 radiologists and use the outputs of previous SOTA models. These MRIs were aligned and reshaped to match.The data set contains 1251 subject MRIs with the T1,T2,FLAIR, and segmentation images. These were saved as .nii.gz images one per image type per subject. These MRIs have had their skulls striped anonymizing the patients.
+
+As a test set we used the IXI dataset \cite{IXI} to measure the false positive rate. This helps us calibrate model sensitivity. This data is made available by the Imperial college of London. It contains 600 T1 and T2 MRIs of health individuals. These have not been skull stripped and can potentially be used to reconstruct the patients identities. 
+
+We ended up not using the Episurg dataset\cite{EPI} as the MRIs were not aligned for the same subject, and the labels were inconsistent shapes. This would have required software tools that we had no experience with.
+
+%(5 points) What did you try to do? What problem did you try to solve? Articulate your objectives using absolutely no jargon. 
+
+%(5 points) How is it done today, and what are the limits of current practice?
+
+%(5 points) Who cares? If you are successful, what difference will it make? 
+
+%(5 points) What data did you use? Provide details about your data, specifically choose the most important aspects of your data mentioned \href{https://arxiv.org/abs/1803.09010}{here}. You don’t have to choose all of them, just the most relevant.
+%-------------------------------------------------------------------------
+%------------------------------------------------------------------------
+\section{Approach}
+
+\subsection{Frameworks}
+
+
+For Data-loading we used the Torchio\cite{tio} package. This package is a collection of useful functions for reading and augmenting MRIs for different tasks. We extended this by creating a methods for reading and reprocessing the BRATS dataset for training, validating, and testing the DNNs we trained. It did not have a default data loader for reading the MRIs as were provided in the kaggle dataset. It also had a built in method for downloading and loading the IXI dataset. 
+
+For defining the data-loaders and the training methods we used Pytorch Lightning\cite{PTL} with Pytorch \cite{PT} as a general framework for defining flexible training loops. It requires that we implement our own data-loaders using their method hooks, and that we define how training is performed on each iteration. It removes the need for us to manage where the data is processed and loaded on device making it so we can focus on experiments. It also handled data logging and storing hyper-parameters of each model run. We use Pytorch to implement the models, loss functions, and metrics. We also used to implement Pixel shuffle. 
+
+\subsection{Losses and Metrics}
+
+To optimize the models we used Dice Loss, Log Cosh Dice Loss, and Focal Loss.Here Dise Loss \cite{SEG} is defined as  
+
+\begin{align}
+ L_{DC}(y,p) = \frac{TP(y,p)  + \epsilon}{TP(y,p)  + .5* FP(v)  + .5*FN(y,p)    + \epsilon } 
+\end{align}
+
+where TP, FP,FN are approximations of the true positive and false positive and negative rates, and $\epsilon$ is a smoothing factor. These are calculated by taking the sum of the one hot encoding of the segment mask and multiplying by the predictions such as  $TP = \text{sum}(p*y)$, $FP = \text{sum}(p*(1-y))$, and $FN = \text{sum}((1-p)*y)$. This is not directly convex and may have issues during train. To address this it has been proposed that the log cosh \cite{SEG} of the function can be used to smooth out the non convex nature of Dice Loss.
+
+\begin{align}
+L_{LC}(y,p) = \log(\cosh(L_{DC}(y,p)))
+\end{align}
+
+Another potential issue is over-fitting to the classes that have better representation in the data. For cross entropy this can be done by adjusting the equation to only learn well on examples where is is less confident called focal loss \cite{SEG}:
+
+\begin{align}
+L_{FL}(V) = \frac{1}{|V|} \sum_{v \in V}  \sum_{j = 0 }^{|C|-1} y(C_j|v) (1-p(C_j|v))^\gamma  \log(p(C_j|v) ) 
+\end{align}
+where $C$ is the set of class, V is the set of pixel elements in a volume, v is a pixel in V, y is the label if it is that class or not, and $C_j$ is a specific class. This has the advantage of being a convex loss function but does not directly optimize for matching the segmentation.
+
+
+A problem we encountered with the losses was that $95 \% + $ of the volumes have the negative label. This was solve by assigning each class a weighting in the losses, and that the loss was calculated for each class, then found the weighted average to produce the final loss value. We also found that Jaccard and Dice Loss were very similar in formulation and could be expressed in terms of each other so we used Log Cosh loss instead as it was more interesting.
+
+Pixel accuracy \cite{MET} can be used to measure the accuracy of the model to predict the classes for each pixel in a volume. This can be done by taking the argmax of the prediction at each pixel, checking if matches ground truth, then taking the average across the volume. 
+
+\begin{align}
+acc = \frac{1}{N |V|} \sum_{i=0}^{N-1} \sum_{v \in V} y(v|C_i) == P(v|C_I)
+\end{align}
+
+Intersection over union \cite{MET}  ca be used to tell how well  the predicted segmentation for each class intersects with ground truth. This is done as follows:
+
+\begin{align}
+mIoU = \frac{1}{N} \sum_{i=0}^{N-1} \frac{| C_i \cap P_i|}{|C_i \cup P_i|} 
+\end{align}
+
+Where $C_i$ is the set of pixel with labeled ground truth for class $i$, and $P_i$ is the model predictions for that class. Another measure of the class intersection is the Dice Coefficient \cite{MET} :
+
+\begin{align}
+dice\_coef = \frac{1}{N} \sum_{i=0}^{N-1} \frac{2| C_i \cap P_i|}{|C_i |+ | P_i|}
+\end{align}
+
+A problem we encountered was that due to the class imbalance the metrics go to $99 \%$ very quickly. We solved this by removing the negative class from the calculation so that we were only measuring  the metrics on the tumor segmentation task. This could be done because the metrics would go to 0 if the model was over fitting on the negative class.
+
+
+\subsection{Models}
+
+We did not end up using a model based on Pixel Shuffle \cite{PIX} or Depth to Space \cite{DEP}. These methods did not generalize well to 3D data, and the models always had the metrics drop to zero, meaning that back-prop was not working well for the task.
+
+
+Keep it to short descriptions of Unet and DeepLabV3+ and we need to got in-depth on our custom model. 
+
+The Deeplabv3+ model is an updated version of Deeplabv3. The architecture was improved by the authors of the original model by 
+ adding an encoder-decoder structure. The encoder is similar to DeepLabv3, but with the addition of the Separable Atrous Convolution. The Decoder consists of upsampling operations to upscale the ouput of the encoder. We used ResNet-101 as the Backbone model in our implementation.
+ 
+The Unet model was first introduced for 2-D biomedical image segmentation tasks as an improvement upon the sliding window approach to localize and label regions around each pixel. Unet utilizes a contracting path to increase output resolution and an expanding path to combine results from the contracting path in order to localize high resolution features. 2-D Unet has provided good performance on biomedical segmentation tasks when combined with data augmentation. Our goal is to design a 3-D version of Unet to experiment if the strong segmentation performance also applies to volumes.
+
+The custom model was based off of an existing 3D Unet implementation (see \cite{10.7554/eLife.57613}). Given the Unet base, many of the characteristics of the Unet model are present in the custom model as well. Unet is designed with max pooling layers in between stacks of convolutional layers. The custom model explores the effect of different aggregation and generalization with the final model using a combination of max pooling, average pooling, as well as 3D dropout layers to attempt to improve gradient flow and better propagate feature representation throughout the network.
+
+
+\subsection{Methodology}
+
+Do we want to go in-depth on methodology here?
+
+
+(10 points) What did you do exactly? How did you solve the problem? Why did you think it would be successful? Is anything new in your approach? 
+
+(5 points) What problems did you anticipate? What problems did you encounter? Did the very first thing you tried work? 
+
+\textbf{Important: Mention any code repositories (with citations) or other sources that you used, and specifically what changes you made to them for your project. }
+
+\section{Experiments and Results}
+
+(10 points) How did you measure success? What experiments were used? What were the results, both quantitative and qualitative? Did you succeed? Did you fail? Why? Justify your reasons with arguments supported by evidence and data.
+
+\textbf{Important: This section should be rigorous and thorough. Present detailed information about decision you made, why you made them, and any evidence/experimentation to back them up. This is especially true if you leveraged existing architectures, pre-trained models, and code (i.e. do not just show results of fine-tuning a pre-trained model without any analysis, claims/evidence, and conclusions, as that tends to not make a strong project). }
+
+%-------------------------------------------------------------------------
+\section{Other Sections}
+
+\begin{table*}
+\begin{center}
+\begin{tabular}{|l|c|p{8cm}|}
+\hline
+Student Name & Contributed Aspects & Details \\
+\hline\hline
+
+Lukas Dauterman & Identified Data-sets & Did the work to identify and Collect datasets appropriate for use in the project \\
+Lukas Dauterman & Data Loading & Implemented the method for loading using Torchio and reprocessing the BRATS Data-set \\
+Lukas Dauterman & Training Methods & Created Framework for running experiments in  PyTorch lighting, fully integrating the data-loaders, models, and metrics and prepossessing pipeline \\
+Lukas Dauterman & Losses and Metrics & Wrote from scratch the loss functions and metrics, and adjusted them once the class imbalanced issue was identified. \\
+Lukas Dauterman & Implemented Pixel Shuffle and Model & Wrote a 3D Implementation of Pixel shuffle due to Pytorch not supporting 3D, and wrote model using Pixel Shuffle base don Unet \\
+
+Josh Crowther & Collaboration Setup & Integrated workflow tooling to facilitate collaboration between members of the team \\
+Josh Crowther & Platform standardization & Consolidated the various training implementations that were being used for reproducible training and validation \\
+Josh Crowther & Experiment Scripting & Gathered requirements on hyperparameter tuning, authored, and validated scripts used for running all model experiments \\
+Josh Crowther & Custom Model Design/Implementation & Researched the strategy for diverse aggregation methods and implemented the custom model based on that research \\
+
+
+
+Team Member 2 & Implementation and Analysis & Trained the LSTM of the encoder and analyzed the results. Analyzed effect of number of nodes in hidden state.  Implemented Convolutional LSTM. \\
+\hline
+\end{tabular}
+\end{center}
+\caption{Contributions of team members.}
+\label{tab:contributions}
+\end{table*}
+
+
+
+You are welcome to introduce additional sections or subsections, if required, to address the following questions in detail. 
+
+(5 points) Appropriate use of figures / tables / visualizations. Are the ideas presented with appropriate illustration? Are the results presented clearly; are the important differences illustrated? 
+
+(5 points) Overall clarity. Is the manuscript self-contained? Can a peer who has also taken Deep Learning understand all of the points addressed above? Is sufficient detail provided? 
+
+(5 points) Finally, points will be distributed based on your understanding of how your project relates to Deep Learning. Here are some questions to think about: 
+
+What was the structure of your problem? How did the structure of your model reflect the structure of your problem? 
+
+What parts of your model had learned parameters (e.g., convolution layers) and what parts did not (e.g., post-processing classifier probabilities into decisions)? 
+
+What representations of input and output did the neural network expect? How was the data pre/post-processed?
+What was the loss function? 
+
+Did the model overfit? How well did the approach generalize? 
+
+What hyperparameters did the model have? How were they chosen? How did they affect performance? What optimizer was used? 
+
+What Deep Learning framework did you use? 
+
+What existing code or models did you start with and what did those starting points provide? 
+
+Briefly discuss potential future work that the research community could focus on to make improvements in the direction of your project's topic.
+
+
+%-------------------------------------------------------------------------
+
+\section{Work Division}
+
+Please add a section on the delegation of work among team members at the end of the report, in the form of a table and paragraph description. This and references do \textbf{NOT} count towards your page limit. An example has been provided in Table \ref{tab:contributions}.
+
+
+Lukas Dauterman:
+
+Worked on Integrating the BRATS 2021 with Torchio.
+Wrote the Loss functions and the metrics functions.
+Worked to create a full integration of Pytorch Lightning with Torchio data and metric and loss logging with flexibility on input data types. 
+Created data pre-processing pipeline to speed up training. 
+Created tutorial on how to use Pytorch lighting, and general best practices on Pytorch model creation.
+Worked on testing how well the models worked with the 
+
+
+\newpage
+\newpage
+\section{Miscellaneous Information}
+
+The rest of the information in this format template has been adapted from CVPR 2020 and provides guidelines on the lower-level specifications regarding the paper's format.
+
+\subsection{Language}
+
+All manuscripts must be in English.
+
+
+\subsection{Paper length}
+Papers, excluding the references section,
+must be no longer than six pages in length. The references section
+will not be included in the page count, and there is no limit on the
+length of the references section. For example, a paper of six pages
+with two pages of references would have a total length of 8 pages.
+
+%-------------------------------------------------------------------------
+\subsection{The ruler}https://www.overleaf.com/project/621a9be0546a348d1fc46b0c
+The \LaTeX\ style defines a printed ruler which should be present in the
+version submitted for review.  The ruler is provided in order that
+reviewers may comment on particular lines in the paper without
+circumlocution.  If you are preparing a document using a non-\LaTeX\
+document preparation system, please arrange for an equivalent ruler to
+appear on the final output pages.  The presence or absence of the ruler
+should not change the appearance of any other content on the page.  The
+camera ready copy should not contain a ruler. (\LaTeX\ users may uncomment
+the \verb'\cvprfinalcopy' command in the document preamble.)  Reviewers:
+note that the ruler measurements do not align well with lines in the paper
+--- this turns out to be very difficult to do well when the paper contains
+many figures and equations, and, when done, looks ugly.  Just use fractional
+references (e.g.\ this line is $095.5$), although in most cases one would
+expect that the approximate location will be adequate.
+
+\subsection{Mathematics}
+
+Please number all of your sections and displayed equations.  It is
+important for readers to be able to refer to any particular equation.  Just
+because you didn't refer to it in the text doesn't mean some future reader
+might not need to refer to it.  It is cumbersome to have to use
+circumlocutions like ``the equation second from the top of page 3 column
+1''.  (Note that the ruler will not be present in the final copy, so is not
+an alternative to equation numbers).  All authors will benefit from reading
+Mermin's description of how to write mathematics:
+\url{http://www.pamitc.org/documents/mermin.pdf}.
+
+Finally, you may feel you need to tell the reader that more details can be
+found elsewhere, and refer them to a technical report.  For conference
+submissions, the paper must stand on its own, and not {\em require} the
+reviewer to go to a techreport for further details.  Thus, you may say in
+the body of the paper ``further details may be found
+in~\cite{Authors14b}''.  Then submit the techreport as additional material.
+Again, you may not assume the reviewers will read this material.
+
+Sometimes your paper is about a problem which you tested using a tool which
+is widely known to be restricted to a single institution.  For example,
+let's say it's 1969, you have solved a key problem on the Apollo lander,
+and you believe that the CVPR70 audience would like to hear about your
+solution.  The work is a development of your celebrated 1968 paper entitled
+``Zero-g frobnication: How being the only people in the world with access to
+the Apollo lander source code makes us a wow at parties'', by Zeus \etal.
+
+You can handle this paper like any other.  Don't write ``We show how to
+improve our previous work [Anonymous, 1968].  This time we tested the
+algorithm on a lunar lander [name of lander removed for blind review]''.
+That would be silly, and would immediately identify the authors. Instead
+write the following:
+\begin{quotation}
+\noindent
+   We describe a system for zero-g frobnication.  This
+   system is new because it handles the following cases:
+   A, B.  Previous systems [Zeus et al. 1968] didn't
+   handle case B properly.  Ours handles it by including
+   a foo term in the bar integral.
+
+   ...
+
+   The proposed system was integrated with the Apollo
+   lunar lander, and went all the way to the moon, don't
+   you know.  It displayed the following behaviours
+   which show how well we solved cases A and B: ...
+\end{quotation}
+As you can see, the above text follows standard scientific convention,
+reads better than the first version, and does not explicitly name you as
+the authors.  A reviewer might think it likely that the new paper was
+written by Zeus \etal, but cannot make any decision based on that guess.
+He or she would have to be sure that no other authors could have been
+contracted to solve problem B.
+\medskip
+
+\noindent
+FAQ\medskip\\
+{\bf Q:} Are acknowledgements OK?\\
+{\bf A:} No.  Leave them for the final copy.\medskip\\
+{\bf Q:} How do I cite my results reported in open challenges?
+{\bf A:} To conform with the double blind review policy, you can report results of other challenge participants together with your results in your paper. For your results, however, you should not identify yourself and should not mention your participation in the challenge. Instead present your results referring to the method proposed in your paper and draw conclusions based on the experimental comparison to other results.\medskip\\
+
+\begin{figure}[t]
+\begin{center}
+\fbox{\rule{0pt}{2in} \rule{0.9\linewidth}{0pt}}
+   %\includegraphics[width=0.8\linewidth]{egfigure.eps}
+\end{center}
+   \caption{Example of caption.  It is set in Roman so that mathematics
+   (always set in Roman: $B \sin A = A \sin B$) may be included without an
+   ugly clash.}
+\label{fig:long}
+\label{fig:onecol}
+\end{figure}
+
+\subsection{Miscellaneous}
+
+\noindent
+Compare the following:\\
+\begin{tabular}{ll}
+ \verb'$conf_a$' &  $conf_a$ \\
+ \verb'$\mathit{conf}_a$' & $\mathit{conf}_a$
+\end{tabular}\\
+See The \TeX book, p165.
+
+The space after \eg, meaning ``for example'', should not be a
+sentence-ending space. So \eg is correct, {\em e.g.} is not.  The provided
+\verb'\eg' macro takes care of this.
+
+When citing a multi-author paper, you may save space by using ``et alia'',
+shortened to ``\etal'' (not ``{\em et.\ al.}'' as ``{\em et}'' is a complete word.)
+However, use it only when there are three or more authors.  Thus, the
+following is correct: ``
+   Frobnication has been trendy lately.
+   It was introduced by Alpher~\cite{Alpher02}, and subsequently developed by
+   Alpher and Fotheringham-Smythe~\cite{Alpher03}, and Alpher \etal~\cite{Alpher04}.''
+
+This is incorrect: ``... subsequently developed by Alpher \etal~\cite{Alpher03} ...''
+because reference~\cite{Alpher03} has just two authors.  If you use the
+\verb'\etal' macro provided, then you need not worry about double periods
+when used at the end of a sentence as in Alpher \etal.
+
+For this citation style, keep multiple citations in numerical (not
+chronological) order, so prefer \cite{Alpher03,Alpher02,Authors14} to
+\cite{Alpher02,Alpher03,Authors14}.
+
+
+\begin{figure*}
+\begin{center}
+\fbox{\rule{0pt}{2in} \rule{.9\linewidth}{0pt}}
+\end{center}
+   \caption{Example of a short caption, which should be centered.}
+\label{fig:short}
+\end{figure*}
+
+%------------------------------------------------------------------------
+\subsection{Formatting your paper}
+
+All text must be in a two-column format. The total allowable width of the
+text area is $6\frac78$ inches (17.5 cm) wide by $8\frac78$ inches (22.54
+cm) high. Columns are to be $3\frac14$ inches (8.25 cm) wide, with a
+$\frac{5}{16}$ inch (0.8 cm) space between them. The main title (on the
+first page) should begin 1.0 inch (2.54 cm) from the top edge of the
+page. The second and following pages should begin 1.0 inch (2.54 cm) from
+the top edge. On all pages, the bottom margin should be 1-1/8 inches (2.86
+cm) from the bottom edge of the page for $8.5 \times 11$-inch paper; for A4
+paper, approximately 1-5/8 inches (4.13 cm) from the bottom edge of the
+page.
+
+%-------------------------------------------------------------------------
+\subsection{Margins and page numbering}
+
+All printed material, including text, illustrations, and charts, must be kept
+within a print area 6-7/8 inches (17.5 cm) wide by 8-7/8 inches (22.54 cm)
+high.
+
+
+
+%-------------------------------------------------------------------------
+\subsection{Type-style and fonts}
+
+Wherever Times is specified, Times Roman may also be used. If neither is
+available on your word processor, please use the font closest in
+appearance to Times to which you have access.
+
+MAIN TITLE. Center the title 1-3/8 inches (3.49 cm) from the top edge of
+the first page. The title should be in Times 14-point, boldface type.
+Capitalize the first letter of nouns, pronouns, verbs, adjectives, and
+adverbs; do not capitalize articles, coordinate conjunctions, or
+prepositions (unless the title begins with such a word). Leave two blank
+lines after the title.
+
+AUTHOR NAME(s) and AFFILIATION(s) are to be centered beneath the title
+and printed in Times 12-point, non-boldface type. This information is to
+be followed by two blank lines.
+
+The ABSTRACT and MAIN TEXT are to be in a two-column format.
+
+MAIN TEXT. Type main text in 10-point Times, single-spaced. Do NOT use
+double-spacing. All paragraphs should be indented 1 pica (approx. 1/6
+inch or 0.422 cm). Make sure your text is fully justified---that is,
+flush left and flush right. Please do not place any additional blank
+lines between paragraphs.
+
+Figure and table captions should be 9-point Roman type as in
+Figures~\ref{fig:onecol} and~\ref{fig:short}.  Short captions should be centred.
+
+\noindent Callouts should be 9-point Helvetica, non-boldface type.
+Initially capitalize only the first word of section titles and first-,
+second-, and third-order headings.
+
+FIRST-ORDER HEADINGS. (For example, {\large \bf 1. Introduction})
+should be Times 12-point boldface, initially capitalized, flush left,
+with one blank line before, and one blank line after.
+
+SECOND-ORDER HEADINGS. (For example, { \bf 1.1. Database elements})
+should be Times 11-point boldface, initially capitalized, flush left,
+with one blank line before, and one after. If you require a third-order
+heading (we discourage it), use 10-point Times, boldface, initially
+capitalized, flush left, preceded by one blank line, followed by a period
+and your text on the same line.
+
+%-------------------------------------------------------------------------
+\subsection{Footnotes}
+
+Please use footnotes\footnote {This is what a footnote looks like.  It
+often distracts the reader from the main flow of the argument.} sparingly.
+Indeed, try to avoid footnotes altogether and include necessary peripheral
+observations in
+the text (within parentheses, if you prefer, as in this sentence).  If you
+wish to use a footnote, place it at the bottom of the column on the page on
+which it is referenced. Use Times 8-point type, single-spaced.
+
+
+%-------------------------------------------------------------------------
+\subsection{References}
+
+List and number all bibliographical references in 9-point Times,
+single-spaced, at the end of your paper. When referenced in the text,
+enclose the citation number in square brackets, for
+example~\cite{Authors14}.  Where appropriate, include the name(s) of
+editors of referenced books.
+
+\begin{table}
+\begin{center}
+\begin{tabular}{|l|c|}
+\hline
+Method & Frobnability \\
+\hline\hline
+Theirs & Frumpy \\
+Yours & Frobbly \\
+Ours & Makes one's heart Frob\\
+\hline
+\end{tabular}
+\end{center}
+\caption{Results.   Ours is better.}
+\end{table}
+
+%-------------------------------------------------------------------------
+\subsection{Illustrations, graphs, and photographs}
+
+All graphics should be centered.  Please ensure that any point you wish to
+make is resolvable in a printed copy of the paper.  Resize fonts in figures
+to match the font in the body text, and choose line widths which render
+effectively in print.  Many readers (and reviewers), even of an electronic
+copy, will choose to print your paper in order to read it.  You cannot
+insist that they do otherwise, and therefore must not assume that they can
+zoom in to see tiny details on a graphic.
+
+When placing figures in \LaTeX, it's almost always best to use
+\verb+\includegraphics+, and to specify the  figure width as a multiple of
+the line width as in the example below
+{\small\begin{verbatim}
+   \usepackage[dvips]{graphicx} ...
+   \includegraphics[width=0.8\linewidth]
+                   {myfile.eps}
+\end{verbatim}
+}
+
+
+%-------------------------------------------------------------------------
+\subsection{Color}
+
+Please refer to the author guidelines on the CVPR 2020 web page for a discussion
+of the use of color in your document.
+
+%------------------------------------------------------------------------
+
+%-------------------------------------------------------------------------
+
+
+{\small
+\bibliographystyle{ieee_fullname}
+\bibliography{egbib}
+}
+
+\end{document}
