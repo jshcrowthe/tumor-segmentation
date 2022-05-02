@@ -1,8 +1,10 @@
-#
+# Tumor Segmentation
 
-Download BRATS
-unzip
-extract tarballs
-move everything to single dir
-set output dir to processed
-t1 t2 flare
+This repository contains the source code utilized to generate the report `tumor_segmentation.pdf`.
+
+The report and associated source code was authored by:
+
+- Josh Crowther
+- Lukas Dauterman
+- Barry Cheng
+- Julio Moscon
